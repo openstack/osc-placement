@@ -65,8 +65,12 @@ class BaseTestCase(base.BaseTestCase):
         to_exec = 'resource provider set ' + uuid + ' --name ' + name
         return self.openstack(to_exec, use_json=True)
 
-    def resource_provider_show(self, uuid):
-        return self.openstack('resource provider show ' + uuid, use_json=True)
+    def resource_provider_show(self, uuid, allocations=False):
+        cmd = 'resource provider show ' + uuid
+        if allocations:
+            cmd = cmd + ' --allocations'
+
+        return self.openstack(cmd, use_json=True)
 
     def resource_provider_list(self, uuid=None, name=None):
         to_exec = 'resource provider list'
@@ -79,6 +83,34 @@ class BaseTestCase(base.BaseTestCase):
 
     def resource_provider_delete(self, uuid):
         return self.openstack('resource provider delete ' + uuid)
+
+    def resource_allocation_show(self, consumer_uuid):
+        return self.openstack(
+            'resource provider allocation show ' + consumer_uuid,
+            use_json=True
+        )
+
+    def resource_allocation_set(self, consumer_uuid, allocations):
+        cmd = 'resource provider allocation set {allocs} {uuid}'.format(
+            uuid=consumer_uuid,
+            allocs=' '.join('--allocation {}'.format(a) for a in allocations)
+        )
+        result = self.openstack(cmd, use_json=True)
+
+        def cleanup(uuid):
+            try:
+                self.openstack('resource provider allocation delete ' + uuid)
+            except subprocess.CalledProcessError as exc:
+                # may have already been deleted by a test case
+                if 'not found' in exc.output.decode('utf-8').lower():
+                    pass
+        self.addCleanup(cleanup, consumer_uuid)
+
+        return result
+
+    def resource_allocation_delete(self, consumer_uuid):
+        cmd = 'resource provider allocation delete ' + consumer_uuid
+        return self.openstack(cmd)
 
     def resource_inventory_show(self, uuid, resource_class):
         cmd = 'resource provider inventory show {uuid} {rc}'.format(

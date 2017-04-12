@@ -72,6 +72,30 @@ class TestResourceProvider(base.BaseTestCase):
         retrieved = self.resource_provider_show(created['uuid'])
         self.assertEqual(created, retrieved)
 
+    def test_resource_provider_show_allocations(self):
+        consumer_uuid = str(uuid.uuid4())
+        allocs = {consumer_uuid: {'resources': {'VCPU': 2}}}
+
+        created = self.resource_provider_create()
+        self.resource_inventory_set(created['uuid'],
+                                    'VCPU=4', 'VCPU:max_unit=4')
+        self.resource_allocation_set(
+            consumer_uuid,
+            ['rp={},VCPU=2'.format(created['uuid'])])
+
+        expected = dict(created, allocations=allocs, generation=2)
+        retrieved = self.resource_provider_show(created['uuid'],
+                                                allocations=True)
+        self.assertEqual(expected, retrieved)
+
+    def test_resource_provider_show_allocations_empty(self):
+        created = self.resource_provider_create()
+
+        expected = dict(created, allocations={})
+        retrieved = self.resource_provider_show(created['uuid'],
+                                                allocations=True)
+        self.assertEqual(expected, retrieved)
+
     def test_resource_provider_show_not_found(self):
         rp_uuid = six.text_type(uuid.uuid4())
         msg = 'No resource provider with uuid ' + rp_uuid + ' found'

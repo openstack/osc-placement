@@ -17,6 +17,7 @@ from osc_placement.resources import common
 
 
 BASE_URL = '/resource_providers'
+ALLOCATIONS_URL = BASE_URL + '/{uuid}/allocations'
 FIELDS = ('uuid', 'name', 'generation')
 
 
@@ -93,6 +94,11 @@ class ShowResourceProvider(command.ShowOne):
         parser = super(ShowResourceProvider, self).get_parser(prog_name)
         # TODO(avolkov): show by uuid or name
         parser.add_argument(
+            '--allocations',
+            action='store_true',
+            help='include the info on allocations of the provider resources'
+        )
+        parser.add_argument(
             'uuid',
             metavar='<uuid>',
             help='UUID of the resource provider'
@@ -105,7 +111,16 @@ class ShowResourceProvider(command.ShowOne):
 
         url = BASE_URL + '/' + parsed_args.uuid
         resource = http.request('GET', url).json()
-        return FIELDS, utils.get_dict_properties(resource, FIELDS)
+
+        if parsed_args.allocations:
+            allocs_url = ALLOCATIONS_URL.format(uuid=parsed_args.uuid)
+            allocs = http.request('GET', allocs_url).json()['allocations']
+            resource['allocations'] = allocs
+
+            fields_ext = FIELDS + ('allocations', )
+            return fields_ext, utils.get_dict_properties(resource, fields_ext)
+        else:
+            return FIELDS, utils.get_dict_properties(resource, FIELDS)
 
 
 class SetResourceProvider(command.ShowOne):
