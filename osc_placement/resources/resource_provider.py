@@ -1,0 +1,159 @@
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+from osc_lib.command import command
+from osc_lib import utils
+
+from osc_placement.resources import common
+
+
+BASE_URL = '/resource_providers'
+FIELDS = ('uuid', 'name', 'generation')
+
+
+class CreateResourceProvider(command.ShowOne):
+    """Create a new resource provider"""
+
+    def get_parser(self, prog_name):
+        parser = super(CreateResourceProvider, self).get_parser(prog_name)
+
+        parser.add_argument(
+            '--uuid',
+            metavar='<uuid>',
+            help='UUID of the resource provider'
+        )
+        parser.add_argument(
+            'name',
+            metavar='<name>',
+            help='Name of the resource provider'
+        )
+
+        return parser
+
+    def take_action(self, parsed_args):
+        http = self.app.client_manager.placement
+
+        data = {'name': parsed_args.name}
+
+        if 'uuid' in parsed_args and parsed_args.uuid:
+            data['uuid'] = parsed_args.uuid
+
+        resp = http.request('POST', BASE_URL, json=data)
+        resource = http.request('GET', resp.headers['Location']).json()
+        return FIELDS, utils.get_dict_properties(resource, FIELDS)
+
+
+class ListResourceProvider(command.Lister):
+    """List resource providers"""
+
+    def get_parser(self, prog_name):
+        parser = super(ListResourceProvider, self).get_parser(prog_name)
+
+        parser.add_argument(
+            '--uuid',
+            metavar='<uuid>',
+            help='UUID of the resource provider'
+        )
+        parser.add_argument(
+            '--name',
+            metavar='<name>',
+            help='Name of the resource provider'
+        )
+
+        return parser
+
+    def take_action(self, parsed_args):
+        http = self.app.client_manager.placement
+
+        filters = {}
+        if 'name' in parsed_args and parsed_args.name:
+            filters['name'] = parsed_args.name
+        if 'uuid' in parsed_args and parsed_args.uuid:
+            filters['uuid'] = parsed_args.uuid
+
+        url = common.url_with_filters(BASE_URL, filters)
+        resources = http.request('GET', url).json()['resource_providers']
+        rows = (utils.get_dict_properties(r, FIELDS) for r in resources)
+        return FIELDS, rows
+
+
+class ShowResourceProvider(command.ShowOne):
+    """Show resource provider details"""
+
+    def get_parser(self, prog_name):
+        parser = super(ShowResourceProvider, self).get_parser(prog_name)
+        # TODO(avolkov): show by uuid or name
+        parser.add_argument(
+            'uuid',
+            metavar='<uuid>',
+            help='UUID of the resource provider'
+        )
+
+        return parser
+
+    def take_action(self, parsed_args):
+        http = self.app.client_manager.placement
+
+        url = BASE_URL + '/' + parsed_args.uuid
+        resource = http.request('GET', url).json()
+        return FIELDS, utils.get_dict_properties(resource, FIELDS)
+
+
+class SetResourceProvider(command.ShowOne):
+    """Update an existing resource provider"""
+
+    def get_parser(self, prog_name):
+        parser = super(SetResourceProvider, self).get_parser(prog_name)
+
+        parser.add_argument(
+            'uuid',
+            metavar='<uuid>',
+            help='UUID of the resource provider'
+        )
+        parser.add_argument(
+            '--name',
+            metavar='<name>',
+            help='A new name of the resource provider',
+            required=True
+        )
+
+        return parser
+
+    def take_action(self, parsed_args):
+        http = self.app.client_manager.placement
+
+        url = BASE_URL + '/' + parsed_args.uuid
+        resource = http.request('PUT', url,
+                                json={'name': parsed_args.name}).json()
+        return FIELDS, utils.get_dict_properties(resource, FIELDS)
+
+
+class DeleteResourceProvider(command.Command):
+    """Delete a resource provider"""
+
+    def get_parser(self, prog_name):
+        parser = super(DeleteResourceProvider, self).get_parser(prog_name)
+
+        # TODO(avolkov): delete by uuid or name
+        parser.add_argument(
+            'uuid',
+            metavar='<uuid>',
+            help='UUID of the resource provider'
+        )
+
+        return parser
+
+    def take_action(self, parsed_args):
+        http = self.app.client_manager.placement
+
+        url = BASE_URL + '/' + parsed_args.uuid
+        http.request('DELETE', url)
