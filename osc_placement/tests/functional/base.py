@@ -139,3 +139,7 @@ class BaseTestCase(base.BaseTestCase):
         cmd = 'resource provider inventory class set {uuid} {rc} {opts}'.\
             format(uuid=uuid, rc=resource_class, opts=' '.join(opts))
         return self.openstack(cmd, use_json=True)
+
+    def resource_provider_show_usage(self, uuid):
+        return self.openstack('resource provider usage show ' + uuid,
+                              use_json=True)
