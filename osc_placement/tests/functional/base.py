@@ -22,16 +22,22 @@ RP_PREFIX = 'osc-placement-functional-tests-'
 
 
 class BaseTestCase(base.BaseTestCase):
-    @staticmethod
-    def openstack(cmd, may_fail=False, use_json=False):
+    VERSION = None
+
+    @classmethod
+    def openstack(cls, cmd, may_fail=False, use_json=False):
         try:
             to_exec = ['openstack'] + cmd.split()
             if use_json:
                 to_exec += ['-f', 'json']
+            if cls.VERSION is not None:
+                to_exec += ['--os-placement-api-version', cls.VERSION]
 
             output = subprocess.check_output(to_exec, stderr=subprocess.STDOUT)
             result = (output or b'').decode('utf-8')
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
+            msg = 'Command: "%s"\noutput: %s' % (' '.join(e.cmd), e.output)
+            e.cmd = msg
             if not may_fail:
                 raise
 
@@ -39,6 +45,18 @@ class BaseTestCase(base.BaseTestCase):
             return json.loads(result)
         else:
             return result
+
+    def assertCommandFailed(self, message, func, *args, **kwargs):
+        signature = [func]
+        signature.extend(args)
+        try:
+            func(*args, **kwargs)
+            self.fail('Command does not fail as required (%s)' % signature)
+
+        except subprocess.CalledProcessError as e:
+            self.assertIn(
+                message, e.output,
+                'Command "%s" fails with different message' % e.cmd)
 
     def resource_provider_create(self, name=''):
         if not name:
@@ -143,3 +161,13 @@ class BaseTestCase(base.BaseTestCase):
     def resource_provider_show_usage(self, uuid):
         return self.openstack('resource provider usage show ' + uuid,
                               use_json=True)
+
+    def resource_provider_aggregate_list(self, uuid):
+        return self.openstack('resource provider aggregate list ' + uuid,
+                              use_json=True)
+
+    def resource_provider_aggregate_set(self, uuid, *aggregates):
+        cmd = 'resource provider aggregate set %s ' % uuid
+        cmd += ' '.join('--aggregate %s' % aggregate
+                        for aggregate in aggregates)
+        return self.openstack(cmd, use_json=True)

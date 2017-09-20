@@ -21,7 +21,12 @@ LOG = logging.getLogger(__name__)
 
 API_NAME = 'placement'
 API_VERSION_OPTION = 'os_placement_api_version'
-API_VERSIONS = {'1.0': 'osc_placement.http.SessionClient'}
+SUPPORTED_VERSIONS = [
+    '1.0',
+    '1.1'
+]
+API_VERSIONS = {v: 'osc_placement.http.SessionClient'
+                for v in SUPPORTED_VERSIONS}
 
 
 def make_client(instance):
