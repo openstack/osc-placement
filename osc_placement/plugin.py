@@ -21,7 +21,7 @@ LOG = logging.getLogger(__name__)
 
 API_NAME = 'placement'
 API_VERSION_OPTION = 'os_placement_api_version'
-API_VERSIONS = {'1.0': 'osc_placement.plugin.Client'}
+API_VERSIONS = {'1.0': 'osc_placement.http.SessionClient'}
 
 
 def make_client(instance):
@@ -31,10 +31,14 @@ def make_client(instance):
         API_VERSIONS
     )
 
+    ks_filter = {'service_type': API_NAME,
+                 'region_name': instance._region_name,
+                 'interface': instance.interface}
+
     LOG.debug('Instantiating placement client: %s', client_class)
+    # TODO(rpodolyaka): add version negotiation
     return client_class(session=instance.session,
-                        region_name=instance._region_name,
-                        interface=instance.interface,
+                        ks_filter=ks_filter,
                         api_version=instance._api_version[API_NAME])
 
 
@@ -49,14 +53,3 @@ def build_option_parser(parser):
         help='Placement API version, default=1.0'
     )
     return parser
-
-
-class Client(object):
-    def __init__(self, session, region_name, interface, api_version='1.0'):
-        self.session = session
-        self.api_version = api_version
-        self.ks_filter = {
-            'service_type': 'placement',
-            'region_name': region_name,
-            'interface': interface,
-        }

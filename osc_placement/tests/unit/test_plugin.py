@@ -27,14 +27,17 @@ class TestPlugin(base.BaseTestCase):
         args = parser.parse_args(['--os-placement-api-version', '1.0'])
         self.assertEqual('1.0', args.os_placement_api_version)
 
-    def test_make_client(self):
+    @mock.patch('osc_placement.http.SessionClient')
+    def test_make_client(self, mock_session_client):
         instance = mock.Mock(_api_version={'placement': '1.0'})
-        client = plugin.make_client(instance)
 
-        self.assertIsInstance(client, plugin.Client)
-        self.assertIs(client.session, instance.session)
-        self.assertEqual('1.0', client.api_version)
-        self.assertEqual({'service_type': 'placement',
-                          'region_name': instance._region_name,
-                          'interface': instance.interface},
-                         client.ks_filter)
+        plugin.make_client(instance)
+        mock_session_client.assert_called_with(
+            session=instance.session,
+            ks_filter={
+                'service_type': 'placement',
+                'region_name': instance._region_name,
+                'interface': instance.interface
+            },
+            api_version='1.0'
+        )
