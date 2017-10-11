@@ -23,7 +23,8 @@ API_NAME = 'placement'
 API_VERSION_OPTION = 'os_placement_api_version'
 SUPPORTED_VERSIONS = [
     '1.0',
-    '1.1'
+    '1.1',
+    '1.2'
 ]
 API_VERSIONS = {v: 'osc_placement.http.SessionClient'
                 for v in SUPPORTED_VERSIONS}

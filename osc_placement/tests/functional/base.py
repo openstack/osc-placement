@@ -171,3 +171,15 @@ class BaseTestCase(base.BaseTestCase):
         cmd += ' '.join('--aggregate %s' % aggregate
                         for aggregate in aggregates)
         return self.openstack(cmd, use_json=True)
+
+    def resource_class_list(self):
+        return self.openstack('resource class list', use_json=True)
+
+    def resource_class_show(self, name):
+        return self.openstack('resource class show ' + name, use_json=True)
+
+    def resource_class_create(self, name):
+        return self.openstack('resource class create ' + name)
+
+    def resource_class_delete(self, name):
+        return self.openstack('resource class delete ' + name)
