@@ -91,12 +91,18 @@ class BaseTestCase(base.BaseTestCase):
 
         return self.openstack(cmd, use_json=True)
 
-    def resource_provider_list(self, uuid=None, name=None):
+    def resource_provider_list(self, uuid=None, name=None,
+                               aggregate_uuids=None, resources=None):
         to_exec = 'resource provider list'
         if uuid:
             to_exec += ' --uuid ' + uuid
         if name:
             to_exec += ' --name ' + name
+        if aggregate_uuids:
+            to_exec += ' ' + ' '.join(
+                '--aggregate-uuid %s' % a for a in aggregate_uuids)
+        if resources:
+            to_exec += ' ' + ' '.join('--resource %s' % r for r in resources)
 
         return self.openstack(to_exec, use_json=True)
 

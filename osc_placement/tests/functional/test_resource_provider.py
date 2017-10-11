@@ -142,3 +142,52 @@ class TestResourceProvider(base.BaseTestCase):
 
         by_uuid = self.resource_provider_list(uuid=str(uuid.uuid4()))
         self.assertEqual([], by_uuid)
+
+    def test_fail_if_incorrect_options(self):
+        # aggregate_uuids param is available starting 1.3
+        self.assertCommandFailed(
+            'Operation or argument is not supported',
+            self.resource_provider_list, aggregate_uuids=['1'])
+        # resource param is available starting 1.4
+        self.assertCommandFailed('Operation or argument is not supported',
+                                 self.resource_provider_list, resources=['1'])
+
+
+class TestResourceProvider14(base.BaseTestCase):
+    VERSION = '1.4'
+
+    def test_fail_if_incorrect_aggregate_uuid(self):
+        # aggregate_uuid requires the uuid like format
+        self.assertCommandFailed(
+            'Invalid uuid value', self.resource_provider_list,
+            aggregate_uuids=['fake_uuid'])
+
+    def test_return_empty_list_for_nonexistent_aggregate(self):
+        self.resource_provider_create()
+        agg = str(uuid.uuid4())
+        self.assertEqual([], self.resource_provider_list(
+            aggregate_uuids=[agg]))
+
+    def test_return_properly_for_aggregate_uuid_request(self):
+        self.resource_provider_create()
+        rp2 = self.resource_provider_create()
+        agg = str(uuid.uuid4())
+        self.resource_provider_aggregate_set(rp2['uuid'], agg)
+        rps = self.resource_provider_list(
+            aggregate_uuids=[agg, str(uuid.uuid4())])
+        self.assertEqual(1, len(rps))
+        self.assertEqual(rp2['uuid'], rps[0]['uuid'])
+
+    def test_return_empty_list_if_no_resource(self):
+        rp = self.resource_provider_create()
+        self.assertEqual([], self.resource_provider_list(
+            resources=['MEMORY_MB=256'], uuid=rp['uuid']))
+
+    def test_return_properly_for_resource_request(self):
+        rp1 = self.resource_provider_create()
+        rp2 = self.resource_provider_create()
+        self.resource_inventory_set(rp1['uuid'], 'PCI_DEVICE=8')
+        self.resource_inventory_set(rp2['uuid'], 'PCI_DEVICE=16')
+        rps = self.resource_provider_list(resources=['PCI_DEVICE=16'])
+        self.assertEqual(1, len(rps))
+        self.assertEqual(rp2['uuid'], rps[0]['uuid'])
