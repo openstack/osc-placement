@@ -248,3 +248,8 @@ class BaseTestCase(base.BaseTestCase):
     def resource_provider_trait_delete(self, uuid):
         cmd = 'resource provider trait delete %s ' % uuid
         self.openstack(cmd)
+
+    def allocation_candidate_list(self, *resources):
+        cmd = 'allocation candidate list ' + ' '.join(
+            '--resource %s' % resource for resource in resources)
+        return self.openstack(cmd, use_json=True)

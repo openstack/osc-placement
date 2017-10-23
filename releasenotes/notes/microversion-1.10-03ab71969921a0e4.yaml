@@ -1,0 +1,11 @@
+---
+features:
+  - |
+    The ``openstack allocation candidate list`` command is
+    available starting from microversion `1.10`_.
+
+    See the command documentation for `allocation candidate list`_ for
+    more details.
+
+    .. _1.10: https://docs.openstack.org/nova/latest/user/placement.html#allocation-candidates-maximum-in-pike
+    .. _allocation candidate list: https://docs.openstack.org/osc-placement/latest/cli/index.html#allocation-candidate-list
