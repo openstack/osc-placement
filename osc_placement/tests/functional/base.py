@@ -188,6 +188,9 @@ class BaseTestCase(base.BaseTestCase):
     def resource_class_create(self, name):
         return self.openstack('resource class create ' + name)
 
+    def resource_class_set(self, name):
+        return self.openstack('resource class set ' + name)
+
     def resource_class_delete(self, name):
         return self.openstack('resource class delete ' + name)
 

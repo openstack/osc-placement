@@ -1,0 +1,11 @@
+---
+features:
+  - |
+    The ``openstack resource class set {name}`` command has been added which
+    requires ``--os-placement-api-version 1.7``. This command is similar to
+    ``openstack resource class create`` except it is idempotent if the resource
+    class already exists.
+
+    See the `command documentation`__ for more details.
+
+    .. __: https://docs.openstack.org/osc-placement/latest/cli/index.html#resource-class-set
