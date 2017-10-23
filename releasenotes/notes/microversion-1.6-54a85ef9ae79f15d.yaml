@@ -1,0 +1,17 @@
+---
+features:
+  - |
+    The following list of trait related commands was added for microversion `1.6`_:
+      - ``openstack trait list``
+      - ``openstack trait show``
+      - ``openstack trait create``
+      - ``openstack trait delete``
+      - ``openstack resource provider trait list``
+      - ``openstack resource provider trait set``
+      - ``openstack resource provider trait delete``
+
+    See the `command documentation`__ for more details.
+
+    .. _1.6: https://docs.openstack.org/nova/latest/user/placement.html#traits-api
+
+    .. __: https://docs.openstack.org/osc-placement/latest/cli/index.html

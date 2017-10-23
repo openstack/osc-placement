@@ -190,3 +190,46 @@ class BaseTestCase(base.BaseTestCase):
 
     def resource_class_delete(self, name):
         return self.openstack('resource class delete ' + name)
+
+    def trait_list(self, name=None, associated=False):
+        cmd = 'trait list'
+        if name:
+            cmd += ' --name ' + name
+        if associated:
+            cmd += ' --associated'
+        return self.openstack(cmd, use_json=True)
+
+    def trait_show(self, name):
+        cmd = 'trait show %s' % name
+        return self.openstack(cmd, use_json=True)
+
+    def trait_create(self, name):
+        cmd = 'trait create %s' % name
+        self.openstack(cmd)
+
+        def cleanup():
+            try:
+                self.trait_delete(name)
+            except subprocess.CalledProcessError as exc:
+                # may have already been deleted by a test case
+                err_message = exc.output.decode('utf-8').lower()
+                if 'not found' not in err_message:
+                    raise
+        self.addCleanup(cleanup)
+
+    def trait_delete(self, name):
+        cmd = 'trait delete %s' % name
+        self.openstack(cmd)
+
+    def resource_provider_trait_list(self, uuid):
+        cmd = 'resource provider trait list %s ' % uuid
+        return self.openstack(cmd, use_json=True)
+
+    def resource_provider_trait_set(self, uuid, *traits):
+        cmd = 'resource provider trait set %s ' % uuid
+        cmd += ' '.join('--trait %s' % trait for trait in traits)
+        return self.openstack(cmd, use_json=True)
+
+    def resource_provider_trait_delete(self, uuid):
+        cmd = 'resource provider trait delete %s ' % uuid
+        self.openstack(cmd)
