@@ -1,0 +1,18 @@
+---
+features:
+  - |
+    The ``openstack resource provider allocation set`` command now supports
+    microversion `1.8`_. Specifically from 1.8 it is necessary to specify
+    ``--user-id`` and ``--project-id`` arguments when setting allocations.
+
+    The ``openstack resource usage show`` command is
+    available starting from microversion `1.9`_. It is possible to
+    show usages for a project and user.
+
+    See the command documentation for `allocation set`_ and
+    `resource usage show`_ for more details.
+
+    .. _1.8: https://docs.openstack.org/nova/latest/user/placement.html#require-placement-project-id-user-id-in-put-allocations
+    .. _1.9: https://docs.openstack.org/nova/latest/user/placement.html#add-get-usages
+    .. _allocation set: https://docs.openstack.org/osc-placement/latest/cli/index.html#resource-provider-allocation-set
+    .. _resource usage show: https://docs.openstack.org/osc-placement/latest/cli/index.html#resource-usage-show

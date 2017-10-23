@@ -14,6 +14,8 @@ from osc_lib.command import command
 from osc_lib import exceptions
 from osc_lib import utils
 
+from osc_placement import version
+
 
 BASE_URL = '/allocations'
 FIELDS = ('generation', 'resources')
@@ -43,12 +45,18 @@ def parse_allocations(allocation_strings):
     return allocations
 
 
-class SetAllocation(command.Lister):
-    """Replaces the set of resource allocation(s) for a given consumer
+class SetAllocation(command.Lister, version.CheckerMixin):
+    """Replaces the set of resource allocation(s) for a given consumer.
 
     Note that this is a full replacement of the existing allocations. If you
     want to retain the existing allocations and add a new resource class
     allocation, you must specify all resource class allocations, old and new.
+
+    From ``--os-placement-api-version 1.8`` it is required to specify
+    ``--project-id`` and ``--user-id`` to set allocations. It is highly
+    recommended to provide a ``--project-id`` and ``--user-id`` when setting
+    allocations for accounting and data consistency reasons.
+
     """
 
     def get_parser(self, prog_name):
@@ -68,7 +76,22 @@ class SetAllocation(command.Lister):
             help='Create (or update) an allocation of a resource class. '
                  'Specify option multiple times to set multiple allocations.'
         )
-
+        parser.add_argument(
+            '--project-id',
+            metavar='project_id',
+            help='ID of the consuming project. '
+                 'This option is required starting from '
+                 '``--os-placement-api-version 1.8``.',
+            required=self.compare_version(version.ge('1.8'))
+        )
+        parser.add_argument(
+            '--user-id',
+            metavar='user_id',
+            help='ID of the consuming user. '
+                 'This option is required starting from '
+                 '``--os-placement-api-version 1.8``.',
+            required=self.compare_version(version.ge('1.8'))
+        )
         return parser
 
     def take_action(self, parsed_args):
@@ -83,7 +106,15 @@ class SetAllocation(command.Lister):
             for rp, resources in allocations.items()]
 
         url = BASE_URL + '/' + parsed_args.uuid
-        http.request('PUT', url, json={'allocations': allocations})
+        payload = {'allocations': allocations}
+        if self.compare_version(version.ge('1.8')):
+            payload['project_id'] = parsed_args.project_id
+            payload['user_id'] = parsed_args.user_id
+        elif parsed_args.project_id or parsed_args.user_id:
+            self.log.warning('--project-id and --user-id options do not '
+                             'affect allocation for '
+                             '--os-placement-api-version less than 1.8')
+        http.request('PUT', url, json=payload)
         per_provider = http.request('GET', url).json()['allocations'].items()
         allocs = [dict(resource_provider=k, **v) for k, v in per_provider]
 
@@ -93,7 +124,7 @@ class SetAllocation(command.Lister):
 
 
 class ShowAllocation(command.Lister):
-    """Show resource allocations for a given consumer"""
+    """Show resource allocations for a given consumer."""
 
     def get_parser(self, prog_name):
         parser = super(ShowAllocation, self).get_parser(prog_name)
@@ -119,7 +150,7 @@ class ShowAllocation(command.Lister):
 
 
 class DeleteAllocation(command.Command):
-    """Delete a resource allocation for a given consumer"""
+    """Delete a resource allocation for a given consumer."""
 
     def get_parser(self, prog_name):
         parser = super(DeleteAllocation, self).get_parser(prog_name)

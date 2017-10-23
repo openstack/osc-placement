@@ -115,12 +115,18 @@ class BaseTestCase(base.BaseTestCase):
             use_json=True
         )
 
-    def resource_allocation_set(self, consumer_uuid, allocations):
+    def resource_allocation_set(self, consumer_uuid, allocations,
+                                project_id=None, user_id=None,
+                                use_json=True):
         cmd = 'resource provider allocation set {allocs} {uuid}'.format(
             uuid=consumer_uuid,
             allocs=' '.join('--allocation {}'.format(a) for a in allocations)
         )
-        result = self.openstack(cmd, use_json=True)
+        if project_id:
+            cmd += ' --project-id %s' % project_id
+        if user_id:
+            cmd += ' --user-id %s' % user_id
+        result = self.openstack(cmd, use_json=use_json)
 
         def cleanup(uuid):
             try:
@@ -168,6 +174,12 @@ class BaseTestCase(base.BaseTestCase):
     def resource_provider_show_usage(self, uuid):
         return self.openstack('resource provider usage show ' + uuid,
                               use_json=True)
+
+    def resource_show_usage(self, project_id, user_id=None):
+        cmd = 'resource usage show %s' % project_id
+        if user_id:
+            cmd += ' --user-id %s' % user_id
+        return self.openstack(cmd, use_json=True)
 
     def resource_provider_aggregate_list(self, uuid):
         return self.openstack('resource provider aggregate list ' + uuid,
