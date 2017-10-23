@@ -14,6 +14,16 @@ from distutils.version import StrictVersion
 import operator
 
 
+SUPPORTED_VERSIONS = [
+    '1.0',
+    '1.1',
+    '1.2',
+    '1.3',
+    '1.4',
+    '1.5',
+]
+
+
 def _op(func, b):
     return lambda a: func(StrictVersion(a), StrictVersion(b))
 
@@ -48,6 +58,16 @@ def _compare(ver, *predicates, **kwargs):
 
 
 def compare(ver, *predicates, **kwargs):
+    """Validate version satisfies provided predicates.
+
+    kwargs['exc'] - boolean whether exception should be raised
+    kwargs['op'] - (all, any) how predicates should be checked
+
+    Examples:
+        compare('1.1', version.gt('1.2'), exc=False) - False
+        compare('1.1', version.eq('1.0'), version.eq('1.1'), op=any) - True
+
+    """
     exc = kwargs.get('exc', True)
     if not _compare(ver, *predicates, **kwargs):
         if exc:
@@ -58,20 +78,33 @@ def compare(ver, *predicates, **kwargs):
 
 
 def check(*predicates, **check_kwargs):
+    """Decorator for command object method.
+
+    See `compare`
+
+    """
     def wrapped(func):
         def inner(self, *args, **kwargs):
-            version = self.app.client_manager.placement.api_version
-            compare(version, *predicates, **check_kwargs)
+            compare(get_version(self), *predicates, **check_kwargs)
             return func(self, *args, **kwargs)
         return inner
     return wrapped
 
 
+def get_version(obj):
+    """Extract version from a command object."""
+    try:
+        version = obj.app.client_manager.placement.api_version
+    except AttributeError:
+        # resource does not have api_version attr when docs are generated
+        # so let's use the minimal one
+        version = SUPPORTED_VERSIONS[0]
+    return version
+
+
 class CheckerMixin(object):
     def check_version(self, *predicates, **kwargs):
-        version = self.app.client_manager.placement.api_version
-        return compare(version, *predicates, **kwargs)
+        return compare(get_version(self), *predicates, **kwargs)
 
     def compare_version(self, *predicates, **kwargs):
-        version = self.app.client_manager.placement.api_version
-        return compare(version, *predicates, exc=False, **kwargs)
+        return compare(get_version(self), *predicates, exc=False, **kwargs)

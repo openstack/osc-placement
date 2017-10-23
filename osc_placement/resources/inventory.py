@@ -15,6 +15,8 @@ from collections import defaultdict
 from osc_lib.command import command
 from osc_lib import utils
 
+from osc_placement import version
+
 
 BASE_URL = '/resource_providers/{uuid}/inventories'
 PER_CLASS_URL = BASE_URL + '/{resource_class}'
@@ -211,10 +213,17 @@ class SetClassInventory(command.ShowOne):
         return FIELDS, utils.get_dict_properties(resource, FIELDS)
 
 
-# TODO(avolkov): Add delete all inventories for RP (version 1.5)
-class DeleteInventory(command.Command):
+class DeleteInventory(command.Command, version.CheckerMixin):
 
-    """Delete the inventory for a given resource provider/class pair"""
+    """Delete the inventory.
+
+    Depending on the resource class argument presence, it can
+    delete all inventory for a given resource provider or for a resource
+    provider/class pair.
+
+    Delete all inventories for given resource provider
+    requires at least ``--os-placement-api-version 1.5``.
+    """
 
     def get_parser(self, prog_name):
         parser = super(DeleteInventory, self).get_parser(prog_name)
@@ -225,19 +234,28 @@ class DeleteInventory(command.Command):
             help='UUID of the resource provider'
         )
         parser.add_argument(
-            'resource_class',
+            '--resource-class',
             metavar='<resource_class>',
-            help=RC_HELP
+            required=self.compare_version(version.lt('1.5')),
+            help=(RC_HELP +
+                  '\nThis argument can be omitted starting with '
+                  '``--os-placement-api-version 1.5``. If it is omitted all '
+                  'inventories of the specified resource provider '
+                  'will be deleted.')
         )
 
         return parser
 
     def take_action(self, parsed_args):
         http = self.app.client_manager.placement
+        url = BASE_URL
+        params = {'uuid': parsed_args.uuid}
+        if parsed_args.resource_class is not None:
+            url = PER_CLASS_URL
+            params = {'uuid': parsed_args.uuid,
+                      'resource_class': parsed_args.resource_class}
 
-        url = PER_CLASS_URL.format(uuid=parsed_args.uuid,
-                                   resource_class=parsed_args.resource_class)
-        http.request('DELETE', url)
+        http.request('DELETE', url.format(**params))
 
 
 class ShowInventory(command.ShowOne):
