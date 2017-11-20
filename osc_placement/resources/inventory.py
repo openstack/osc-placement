@@ -57,13 +57,13 @@ INVENTORY_FIELDS = {
     },
     'total': {
         'type': int,
-        'required': False,
+        'required': True,
         'help': ('The actual amount of the resource that the provider '
                  'can accommodate.')
     }
 }
 FIELDS = tuple(INVENTORY_FIELDS.keys())
-RC_HELP = ('<resource_class> is entity that indicates standard or '
+RC_HELP = ('<resource_class> is an entity that indicates standard or '
            'deployer-specific resources that can be provided by a resource '
            'provider. For example, VCPU, MEMORY_MB, DISK_GB.')
 
@@ -93,6 +93,14 @@ def parse_resource_argument(resource):
 class SetInventory(command.Lister):
 
     """Replaces the set of inventory records for the resource provider.
+
+    Note that this is a full replacement of the existing inventory. If you
+    want to retain the existing inventory and add a new resource class
+    inventory, you must specify all resource class inventory, old and new.
+
+    If a specific inventory field is not specified for a given resource class,
+    it is assumed to be the total, i.e. --resource VCPU=16 is equivalent to
+    --resource VCPU:total=16.
 
     Example: openstack resource provider inventory set <uuid> \
                  --resource VCPU=16 \
