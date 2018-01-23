@@ -1,0 +1,36 @@
+---
+prelude: |
+    This is the first major release for the *osc-placement* plugin and includes
+    a minimal set of command line support for the `Placement API`_.
+
+    .. _Placement API: https://docs.openstack.org/nova/latest/user/placement.html
+features:
+  - |
+    The set of new commands in this release includes::
+
+      $ openstack resource -h
+      Command "resource" matches:
+        resource class create
+        resource class delete
+        resource class list
+        resource class show
+        resource provider aggregate list
+        resource provider aggregate set
+        resource provider allocation delete
+        resource provider allocation set
+        resource provider allocation show
+        resource provider create
+        resource provider delete
+        resource provider inventory class set
+        resource provider inventory delete
+        resource provider inventory list
+        resource provider inventory set
+        resource provider inventory show
+        resource provider list
+        resource provider set
+        resource provider show
+        resource provider usage show
+
+    See the `Usage`_ documentation for more details and examples.
+
+    .. _Usage: https://docs.openstack.org/osc-placement/latest/user/index.html
