@@ -44,7 +44,12 @@ def parse_allocations(allocation_strings):
 
 
 class SetAllocation(command.Lister):
-    """Set resource allocation(s) for a given consumer"""
+    """Replaces the set of resource allocation(s) for a given consumer
+
+    Note that this is a full replacement of the existing allocations. If you
+    want to retain the existing allocations and add a new resource class
+    allocation, you must specify all resource class allocations, old and new.
+    """
 
     def get_parser(self, prog_name):
         parser = super(SetAllocation, self).get_parser(prog_name)

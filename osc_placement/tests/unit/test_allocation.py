@@ -10,14 +10,16 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import unittest
 import uuid
 
 from osc_lib import exceptions
+from oslotest import base
+import six
+
 from osc_placement.resources import allocation
 
 
-class TestAllocation(unittest.TestCase):
+class TestAllocation(base.BaseTestCase):
     def test_parse_allocations(self):
         rp1 = str(uuid.uuid4())
         rp2 = str(uuid.uuid4())
@@ -28,7 +30,8 @@ class TestAllocation(unittest.TestCase):
             rp1: {'VCPU': 4, 'MEMORY_MB': 16324},
             rp2: {'VCPU': 4, 'DISK_GB': 4096},
         }
-        self.assertEqual(expected, allocation.parse_allocations(allocations))
+        self.assertDictEqual(
+            expected, allocation.parse_allocations(allocations))
 
     def test_merge_allocations(self):
         rp1 = str(uuid.uuid4())
@@ -44,10 +47,13 @@ class TestAllocation(unittest.TestCase):
         allocations = [
             'rp={},VCPU=4,MEMORY_MB=16324'.format(rp1),
             'rp={},VCPU=8,DISK_GB=4096'.format(rp1)]
-        self.assertRaises(
+        ex = self.assertRaises(
             exceptions.CommandError, allocation.parse_allocations, allocations)
+        self.assertEqual(
+            'Conflict detected for resource provider %s resource class VCPU' %
+            rp1, six.text_type(ex))
 
-    def test_fail_if_incorect_format(self):
+    def test_fail_if_incorrect_format(self):
         allocations = ['incorrect_format']
         self.assertRaisesRegexp(
             ValueError,
