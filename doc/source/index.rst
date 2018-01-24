@@ -6,20 +6,22 @@
 Welcome to osc-placement's documentation!
 =========================================
 
-Contents:
+.. include:: ../../README.rst
+
+Contents
+--------
 
 .. toctree::
    :maxdepth: 2
 
-   readme
    installation
-   usage
    contributing
+   cli/index
+   user/index
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
 
