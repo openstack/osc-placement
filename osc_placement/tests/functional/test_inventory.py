@@ -174,8 +174,15 @@ class TestSetInventory(base.BaseTestCase):
             subprocess.CalledProcessError,
             self.openstack,
             ('resource provider inventory class set '
-             'fake_uuid fake_class --totals 5'))
+             'fake_uuid fake_class --total 5 --unknown 1'))
         self.assertIn('unrecognized arguments', exc.output.decode('utf-8'))
+        # Valid RP UUID and resource class, but no inventory field.
+        rp = self.resource_provider_create()
+        exc = self.assertRaises(
+            subprocess.CalledProcessError, self.openstack,
+            'resource provider inventory class set %s VCPU' % rp['uuid'])
+        self.assertIn('argument --total is required',
+                      exc.output.decode('utf-8'))
 
     def test_set_inventory_for_resource_class(self):
         rp = self.resource_provider_create()
