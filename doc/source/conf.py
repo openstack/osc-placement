@@ -77,3 +77,7 @@ latex_documents = [
 
 # See: https://docs.openstack.org/cliff/2.6.0/sphinxext.html
 autoprogram_cliff_application = 'openstack'
+
+autoprogram_cliff_ignored = [
+    '--help', '--format', '--column', '--max-width', '--fit-width',
+    '--print-empty', '--prefix', '--noindent', '--quote']
