@@ -9,6 +9,7 @@ Python API binding is not implemented - Placement API consumers are encouraged
 to use the REST API directly, CLI is provided only for convenience of users.
 
 * Free software: Apache license
-* Documentation: http://docs.openstack.org/developer/osc-placement
-* Source: http://git.openstack.org/cgit/openstack/osc-placement
-* Bugs: http://bugs.launchpad.net/placement-osc-plugin
+* Documentation: https://docs.openstack.org/osc-placement/latest/index.html
+* Source: https://git.openstack.org/cgit/openstack/osc-placement
+* Bugs: https://bugs.launchpad.net/placement-osc-plugin
+* Release notes: https://docs.openstack.org/releasenotes/osc-placement/
