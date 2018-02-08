@@ -88,13 +88,22 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
             rps[rp_uuid] = ','.join(
                 '%s=%s/%s' % (rc, value['used'], value['capacity'])
                 for rc, value in resources['resources'].items())
+
         rows = []
-        for i, allocation_req in enumerate(resp['allocation_requests']):
-            for allocation in allocation_req['allocations']:
-                rp = allocation['resource_provider']['uuid']
-                req = ','.join(
-                    '%s=%s' % (rc, value)
-                    for rc, value in allocation['resources'].items())
-                rows.append([i + 1, req, rp, rps[rp]])
+        if self.compare_version(version.ge('1.12')):
+            for i, allocation_req in enumerate(resp['allocation_requests']):
+                for rp, resources in allocation_req['allocations'].items():
+                    req = ','.join(
+                        '%s=%s' % (rc, value)
+                        for rc, value in resources['resources'].items())
+                    rows.append([i + 1, req, rp, rps[rp]])
+        else:
+            for i, allocation_req in enumerate(resp['allocation_requests']):
+                for allocation in allocation_req['allocations']:
+                    rp = allocation['resource_provider']['uuid']
+                    req = ','.join(
+                        '%s=%s' % (rc, value)
+                        for rc, value in allocation['resources'].items())
+                    rows.append([i + 1, req, rp, rps[rp]])
 
         return FIELDS, rows

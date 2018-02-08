@@ -18,7 +18,6 @@ from osc_placement import version
 
 
 BASE_URL = '/allocations'
-FIELDS = ('generation', 'resources')
 
 
 def parse_allocations(allocation_strings):
@@ -56,6 +55,10 @@ class SetAllocation(command.Lister, version.CheckerMixin):
     ``--project-id`` and ``--user-id`` to set allocations. It is highly
     recommended to provide a ``--project-id`` and ``--user-id`` when setting
     allocations for accounting and data consistency reasons.
+
+    Starting with ``--os-placement-api-version 1.12`` the API response
+    contains the project_id and user_id of allocations which also
+    appears in the CLI output.
 
     """
 
@@ -101,9 +104,15 @@ class SetAllocation(command.Lister, version.CheckerMixin):
         if not allocations:
             raise exceptions.CommandError(
                 'At least one resource allocation must be specified')
-        allocations = [
-            {'resource_provider': {'uuid': rp}, 'resources': resources}
-            for rp, resources in allocations.items()]
+
+        if self.compare_version(version.ge('1.12')):
+            allocations = {
+                rp: {'resources': resources}
+                for rp, resources in allocations.items()}
+        else:
+            allocations = [
+                {'resource_provider': {'uuid': rp}, 'resources': resources}
+                for rp, resources in allocations.items()]
 
         url = BASE_URL + '/' + parsed_args.uuid
         payload = {'allocations': allocations}
@@ -115,16 +124,29 @@ class SetAllocation(command.Lister, version.CheckerMixin):
                              'affect allocation for '
                              '--os-placement-api-version less than 1.8')
         http.request('PUT', url, json=payload)
-        per_provider = http.request('GET', url).json()['allocations'].items()
+        resp = http.request('GET', url).json()
+        per_provider = resp['allocations'].items()
+
+        fields = ('resource_provider', 'generation', 'resources')
         allocs = [dict(resource_provider=k, **v) for k, v in per_provider]
+        if self.compare_version(version.ge('1.12')):
+            fields += ('project_id', 'user_id')
+            [alloc.update(project_id=resp['project_id'],
+                          user_id=resp['user_id'])
+             for alloc in allocs]
 
-        fields_ext = ('resource_provider', ) + FIELDS
-        rows = (utils.get_dict_properties(a, fields_ext) for a in allocs)
-        return fields_ext, rows
+        rows = (utils.get_dict_properties(a, fields) for a in allocs)
+        return fields, rows
 
 
-class ShowAllocation(command.Lister):
-    """Show resource allocations for a given consumer."""
+class ShowAllocation(command.Lister, version.CheckerMixin):
+    """Show resource allocations for a given consumer.
+
+    Starting with ``--os-placement-api-version 1.12`` the API response contains
+    the project_id and user_id of allocations which also appears in the CLI
+    output.
+
+    """
 
     def get_parser(self, prog_name):
         parser = super(ShowAllocation, self).get_parser(prog_name)
@@ -141,12 +163,23 @@ class ShowAllocation(command.Lister):
         http = self.app.client_manager.placement
 
         url = BASE_URL + '/' + parsed_args.uuid
-        per_provider = http.request('GET', url).json()['allocations'].items()
-        allocs = [dict(resource_provider=k, **v) for k, v in per_provider]
+        resp = http.request('GET', url).json()
+        per_provider = resp['allocations'].items()
+        if self.compare_version(version.ge('1.12')):
+            allocs = [dict(
+                resource_provider=k,
+                project_id=resp['project_id'],
+                user_id=resp['user_id'],
+                **v) for k, v in per_provider]
+        else:
+            allocs = [dict(resource_provider=k, **v) for k, v in per_provider]
 
-        fields_ext = ('resource_provider', ) + FIELDS
-        rows = (utils.get_dict_properties(a, fields_ext) for a in allocs)
-        return fields_ext, rows
+        fields = ('resource_provider', 'generation', 'resources')
+        if self.compare_version(version.ge('1.12')):
+            fields += ('project_id', 'user_id')
+
+        rows = (utils.get_dict_properties(a, fields) for a in allocs)
+        return fields, rows
 
 
 class DeleteAllocation(command.Command):

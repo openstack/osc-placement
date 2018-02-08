@@ -90,3 +90,7 @@ class TestAllocationCandidate(base.BaseTestCase):
     def test_fail_if_unknown_rc(self):
         self.assertCommandFailed(
             'No such resource', self.allocation_candidate_list, 'UNKNOWN=10')
+
+
+class TestAllocationCandidate112(TestAllocationCandidate):
+    VERSION = '1.12'
