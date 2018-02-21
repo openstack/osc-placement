@@ -1,0 +1,11 @@
+---
+features:
+  - |
+    Support is added for the `1.14`_ placement API microversion by adding
+    the ``root_provider_uuid`` and ``parent_provider_uuid`` to the output of
+    resource provider list/show/create/set commands. Also resource provider
+    create/set commands now have a new option ``--parent-provider <UUID>``.
+    And ``resource provider list`` has a new option ``--in-tree <UUID>``.
+
+    .. _1.14: https://docs.openstack.org/nova/latest/user/placement.html#add-nested-resource-providers
+

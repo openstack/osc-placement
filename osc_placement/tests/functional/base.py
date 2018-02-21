@@ -59,14 +59,18 @@ class BaseTestCase(base.BaseTestCase):
                 message, e.output,
                 'Command "%s" fails with different message' % e.cmd)
 
-    def resource_provider_create(self, name=''):
+    def resource_provider_create(self,
+                                 name='',
+                                 parent_provider_uuid=None):
         if not name:
             random_part = ''.join(random.choice(string.ascii_letters)
                                   for i in range(10))
             name = RP_PREFIX + random_part
 
-        res = self.openstack('resource provider create ' + name,
-                             use_json=True)
+        to_exec = 'resource provider create ' + name
+        if parent_provider_uuid is not None:
+            to_exec += ' --parent-provider ' + parent_provider_uuid
+        res = self.openstack(to_exec, use_json=True)
 
         def cleanup():
             try:
@@ -80,8 +84,10 @@ class BaseTestCase(base.BaseTestCase):
 
         return res
 
-    def resource_provider_set(self, uuid, name):
+    def resource_provider_set(self, uuid, name, parent_provider_uuid=None):
         to_exec = 'resource provider set ' + uuid + ' --name ' + name
+        if parent_provider_uuid is not None:
+            to_exec += ' --parent-provider ' + parent_provider_uuid
         return self.openstack(to_exec, use_json=True)
 
     def resource_provider_show(self, uuid, allocations=False):
@@ -92,7 +98,8 @@ class BaseTestCase(base.BaseTestCase):
         return self.openstack(cmd, use_json=True)
 
     def resource_provider_list(self, uuid=None, name=None,
-                               aggregate_uuids=None, resources=None):
+                               aggregate_uuids=None, resources=None,
+                               in_tree=None):
         to_exec = 'resource provider list'
         if uuid:
             to_exec += ' --uuid ' + uuid
@@ -103,6 +110,8 @@ class BaseTestCase(base.BaseTestCase):
                 '--aggregate-uuid %s' % a for a in aggregate_uuids)
         if resources:
             to_exec += ' ' + ' '.join('--resource %s' % r for r in resources)
+        if in_tree:
+            to_exec += ' --in-tree ' + in_tree
 
         return self.openstack(to_exec, use_json=True)
 
