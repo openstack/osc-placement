@@ -258,7 +258,9 @@ class BaseTestCase(base.BaseTestCase):
         cmd = 'resource provider trait delete %s ' % uuid
         self.openstack(cmd)
 
-    def allocation_candidate_list(self, *resources):
+    def allocation_candidate_list(self, resources, limit=None):
         cmd = 'allocation candidate list ' + ' '.join(
             '--resource %s' % resource for resource in resources)
+        if limit is not None:
+            cmd += ' --limit %d' % limit
         return self.openstack(cmd, use_json=True)

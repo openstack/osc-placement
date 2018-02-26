@@ -29,12 +29,13 @@ class TestAllocationCandidate(base.BaseTestCase):
 
     def test_list_empty(self):
         self.assertEqual([], self.allocation_candidate_list(
-            'MEMORY_MB=999999999'))
+            resources=['MEMORY_MB=999999999']))
 
     def test_list_one(self):
         rp = self.resource_provider_create()
         self.resource_inventory_set(rp['uuid'], 'MEMORY_MB=1024')
-        candidates = self.allocation_candidate_list('MEMORY_MB=256')
+        candidates = self.allocation_candidate_list(
+            resources=('MEMORY_MB=256',))
         self.assertIn(
             rp['uuid'],
             [candidate['resource provider'] for candidate in candidates])
@@ -50,7 +51,7 @@ class TestAllocationCandidate(base.BaseTestCase):
         self.resource_inventory_set(
             rp2['uuid'], 'MEMORY_MB=16384', 'DISK_GB=1024')
         candidates = self.allocation_candidate_list(
-            'MEMORY_MB=1024', 'DISK_GB=80')
+            resources=('MEMORY_MB=1024', 'DISK_GB=80'))
         rps = {c['resource provider']: c for c in candidates}
         self.assertResourceEqual(
             'MEMORY_MB=1024,DISK_GB=80', rps[rp1['uuid']]['allocation'])
@@ -74,7 +75,7 @@ class TestAllocationCandidate(base.BaseTestCase):
         self.resource_provider_trait_set(
             rp2['uuid'], 'MISC_SHARES_VIA_AGGREGATE')
         candidates = self.allocation_candidate_list(
-            'MEMORY_MB=1024', 'DISK_GB=80')
+            resources=('MEMORY_MB=1024', 'DISK_GB=80'))
         rps = {c['resource provider']: c for c in candidates}
         self.assertResourceEqual(
             'MEMORY_MB=1024', rps[rp1['uuid']]['allocation'])
@@ -89,8 +90,31 @@ class TestAllocationCandidate(base.BaseTestCase):
 
     def test_fail_if_unknown_rc(self):
         self.assertCommandFailed(
-            'No such resource', self.allocation_candidate_list, 'UNKNOWN=10')
+            'No such resource',
+            self.allocation_candidate_list,
+            resources=('UNKNOWN=10',))
 
 
 class TestAllocationCandidate112(TestAllocationCandidate):
     VERSION = '1.12'
+
+
+class TestAllocationCandidate116(base.BaseTestCase):
+    VERSION = '1.16'
+
+    def test_list_limit(self):
+        rp1 = self.resource_provider_create()
+        rp2 = self.resource_provider_create()
+        self.resource_inventory_set(
+            rp1['uuid'], 'MEMORY_MB=8192', 'DISK_GB=512')
+        self.resource_inventory_set(
+            rp2['uuid'], 'MEMORY_MB=8192', 'DISK_GB=512')
+
+        unlimited = self.allocation_candidate_list(
+            resources=('MEMORY_MB=1024', 'DISK_GB=80'))
+        self.assertTrue(len(set([row['#'] for row in unlimited])) > 1)
+
+        limited = self.allocation_candidate_list(
+            resources=('MEMORY_MB=1024', 'DISK_GB=80'),
+            limit=1)
+        self.assertEqual(len(set([row['#'] for row in limited])), 1)

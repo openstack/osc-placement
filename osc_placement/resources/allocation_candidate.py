@@ -68,6 +68,14 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
                  '``--resource VCP=4 --resource DISK_GB=64 '
                  '--resource MEMORY_MB=2048``'
         )
+        parser.add_argument(
+            '--limit',
+            metavar='<limit>',
+            help='A positive integer to limit '
+                 'the maximum number of allocation candidates. '
+                 'This option requires at least '
+                 '``--os-placement-api-version 1.16``.'
+        )
 
         return parser
 
@@ -81,6 +89,10 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
 
         params = {'resources': ','.join(
             resource.replace('=', ':') for resource in parsed_args.resource)}
+        if 'limit' in parsed_args and parsed_args.limit:
+            # Fail if --limit but not high enough microversion.
+            self.check_version(version.ge('1.16'))
+            params['limit'] = int(parsed_args.limit)
         resp = http.request('GET', BASE_URL, params=params).json()
 
         rps = {}

@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Support is added for the `1.16`_ placement API microversion by adding
+    the ``--limit`` option to the ``openstack allocation candidate list``
+    command.
+
+    .. _1.16: https://docs.openstack.org/nova/latest/user/placement.html#limit-allocation-candidates
