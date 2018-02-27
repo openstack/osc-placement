@@ -17,7 +17,6 @@ from osc_placement import version
 
 
 BASE_URL = '/allocation_candidates'
-FIELDS = ('#', 'allocation', 'resource provider', 'inventory used/capacity')
 
 
 class ListAllocationCandidate(command.Lister, version.CheckerMixin):
@@ -76,6 +75,16 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
                  'This option requires at least '
                  '``--os-placement-api-version 1.16``.'
         )
+        parser.add_argument(
+            '--required',
+            metavar='<required>',
+            action='append',
+            default=[],
+            help='A required trait. May be repeated. Allocation candidates '
+                 'must collectively contain all of the required traits. '
+                 'This option requires at least '
+                 '``--os-placement-api-version 1.17``.'
+        )
 
         return parser
 
@@ -93,13 +102,22 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
             # Fail if --limit but not high enough microversion.
             self.check_version(version.ge('1.16'))
             params['limit'] = int(parsed_args.limit)
+        if 'required' in parsed_args and parsed_args.required:
+            # Fail if --required but not high enough microversion.
+            self.check_version(version.ge('1.17'))
+            params['required'] = ','.join(parsed_args.required)
         resp = http.request('GET', BASE_URL, params=params).json()
 
-        rps = {}
+        rp_resources = {}
+        include_traits = self.compare_version(version.ge('1.17'))
+        if include_traits:
+            rp_traits = {}
         for rp_uuid, resources in resp['provider_summaries'].items():
-            rps[rp_uuid] = ','.join(
+            rp_resources[rp_uuid] = ','.join(
                 '%s=%s/%s' % (rc, value['used'], value['capacity'])
                 for rc, value in resources['resources'].items())
+            if include_traits:
+                rp_traits[rp_uuid] = ','.join(resources['traits'])
 
         rows = []
         if self.compare_version(version.ge('1.12')):
@@ -108,7 +126,11 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
                     req = ','.join(
                         '%s=%s' % (rc, value)
                         for rc, value in resources['resources'].items())
-                    rows.append([i + 1, req, rp, rps[rp]])
+                    if include_traits:
+                        row = [i + 1, req, rp, rp_resources[rp], rp_traits[rp]]
+                    else:
+                        row = [i + 1, req, rp, rp_resources[rp]]
+                    rows.append(row)
         else:
             for i, allocation_req in enumerate(resp['allocation_requests']):
                 for allocation in allocation_req['allocations']:
@@ -116,6 +138,11 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
                     req = ','.join(
                         '%s=%s' % (rc, value)
                         for rc, value in allocation['resources'].items())
-                    rows.append([i + 1, req, rp, rps[rp]])
+                    rows.append([i + 1, req, rp, rp_resources[rp]])
 
-        return FIELDS, rows
+        fields = ('#', 'allocation', 'resource provider',
+                  'inventory used/capacity')
+        if include_traits:
+            fields += ('traits',)
+
+        return fields, rows

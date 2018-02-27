@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Support is added for the `1.17`_ placement API microversion by adding
+    the ``--required`` option to the ``openstack allocation candidate list``
+    command.
+
+    .. _1.17: https://docs.openstack.org/nova/latest/user/placement.html#add-required-parameter-to-the-allocation-candidates-maximum-in-queens
