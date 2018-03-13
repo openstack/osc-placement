@@ -16,19 +16,18 @@
 
 function generate_testr_results {
     if [ -f .testrepository/0 ]; then
-        sudo .tox/functional/bin/testr last --subunit > $WORKSPACE/testrepository.subunit
-        sudo mv $WORKSPACE/testrepository.subunit $BASE/logs/testrepository.subunit
-        sudo /usr/os-testr-env/bin/subunit2html $BASE/logs/testrepository.subunit $BASE/logs/testr_results.html
-        sudo gzip -9 $BASE/logs/testrepository.subunit
-        sudo gzip -9 $BASE/logs/testr_results.html
-        sudo chown jenkins:jenkins $BASE/logs/testrepository.subunit.gz $BASE/logs/testr_results.html.gz
-        sudo chmod a+r $BASE/logs/testrepository.subunit.gz $BASE/logs/testr_results.html.gz
+        .tox/functional/bin/testr last --subunit > $WORKSPACE/testrepository.subunit
+        mv $WORKSPACE/testrepository.subunit $BASE/logs/testrepository.subunit
+        /usr/os-testr-env/bin/subunit2html $BASE/logs/testrepository.subunit $BASE/logs/testr_results.html
+        gzip -9 $BASE/logs/testrepository.subunit
+        gzip -9 $BASE/logs/testr_results.html
+        chmod a+r $BASE/logs/testrepository.subunit.gz $BASE/logs/testr_results.html.gz
     fi
 }
 
 export OSCPLACEMENT_DIR="$BASE/new/osc-placement"
 
-sudo chown -R jenkins:stack $OSCPLACEMENT_DIR
+sudo chown -R $USER:stack $OSCPLACEMENT_DIR
 
 # Go to the osc-placement dir
 cd $OSCPLACEMENT_DIR
@@ -38,7 +37,7 @@ echo "Running osc-placement functional test suite"
 set +e
 # Preserve env for OS_ credentials
 source $BASE/new/devstack/openrc admin admin
-sudo -E -H -u jenkins tox -e ${TOX_ENV:-functional}
+tox -e ${TOX_ENV:-functional}
 EXIT_CODE=$?
 set -e
 
