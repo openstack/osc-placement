@@ -51,6 +51,53 @@ To see the list of available commands for resource providers, run::
 
   $ openstack resource -h
 
+Resource providers
+~~~~~~~~~~~~~~~~~~
+
+Resource provider command subset have a basic CRUD interface.
+First, it can be easily created:
+
+.. code-block:: console
+
+  $ p=$(openstack resource provider create Baremetal_node_01 -c uuid -f value)
+
+and renamed:
+
+.. code-block:: console
+
+  $ openstack resource provider set $p --name Baremetal_node_02
+  +------------+--------------------------------------+
+  | Field      | Value                                |
+  +------------+--------------------------------------+
+  | uuid       | c33caafc-b59c-46bc-b396-19f117171fec |
+  | name       | Baremetal_node_02                    |
+  | generation | 0                                    |
+  +------------+--------------------------------------+
+
+To get all allocations related to the resource provider use
+an ``--allocations`` option for the show command:
+
+.. code-block:: console
+
+  $ openstack resource provider show $p --allocations
+  +-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+  | Field       | Value                                                                                                                                                                                                                |
+  +-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+  | uuid        | c33caafc-b59c-46bc-b396-19f117171fec                                                                                                                                                                                 |
+  | name        | Baremetal_node_02                                                                                                                                                                                                    |
+  | generation  | 4                                                                                                                                                                                                                    |
+  | allocations | {u'45f4ccf9-36e3-4d13-8c6b-80fd6c66a195': {u'resources': {u'VCPU': 1, u'MEMORY_MB': 512, u'DISK_GB': 10}}, u'2892c6f6-6ee7-4a34-aa20-156b8216de3c': {u'resources': {u'VCPU': 1, u'MEMORY_MB': 512, u'DISK_GB': 10}}} |
+  +-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+A resource provider cannot be deleted if it has allocations,
+otherwise just issue:
+
+.. code-block:: console
+
+  $ openstack resource provider delete $p
+
+and it is done.
+
 Allocations
 ~~~~~~~~~~~
 
