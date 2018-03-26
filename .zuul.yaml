@@ -1,0 +1,17 @@
+- job:
+    name: osc-placement-dsvm-functional
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/osc-placement-dsvm-functional/run.yaml
+    post-run: playbooks/legacy/osc-placement-dsvm-functional/post.yaml
+    timeout: 7200
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/osc-placement
+
+- project:
+    check:
+      jobs:
+        - osc-placement-dsvm-functional
+    gate:
+      jobs:
+        - osc-placement-dsvm-functional
