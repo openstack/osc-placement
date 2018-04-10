@@ -26,6 +26,7 @@ class BaseTestCase(base.BaseTestCase):
 
     @classmethod
     def openstack(cls, cmd, may_fail=False, use_json=False):
+        result = None
         try:
             to_exec = ['openstack'] + cmd.split()
             if use_json:
@@ -41,7 +42,7 @@ class BaseTestCase(base.BaseTestCase):
             if not may_fail:
                 raise
 
-        if use_json:
+        if use_json and result:
             return json.loads(result)
         else:
             return result
