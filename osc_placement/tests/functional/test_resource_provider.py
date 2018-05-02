@@ -156,12 +156,6 @@ class TestResourceProvider(base.BaseTestCase):
 class TestResourceProvider14(base.BaseTestCase):
     VERSION = '1.4'
 
-    def test_fail_if_incorrect_aggregate_uuid(self):
-        # aggregate_uuid requires the uuid like format
-        self.assertCommandFailed(
-            'Invalid uuid value', self.resource_provider_list,
-            aggregate_uuids=['fake_uuid'])
-
     def test_return_empty_list_for_nonexistent_aggregate(self):
         self.resource_provider_create()
         agg = str(uuid.uuid4())
