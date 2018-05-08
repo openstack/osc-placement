@@ -1,0 +1,18 @@
+---
+features:
+  - |
+    The ``openstack resource provider inventory delete`` command now supports
+    microversion `1.5`_. Specifically it is possible to delete all inventories
+    of the specified resource provider.
+
+    See the `command documentation`__ for more details.
+
+    .. _1.5: https://docs.openstack.org/nova/latest/user/placement.html#delete-all-inventory-for-a-resource-provider
+    .. __: https://docs.openstack.org/osc-placement/latest/cli/index.html#resource-provider-inventory-delete
+upgrade:
+  - |
+    The ``resource_class`` positional argument in command
+     ``openstack resource provider inventory delete`` was replaced with the
+     ``--resource-class`` optional argument. The ``--resource-class`` option
+     is still required if using ``--os-placement-api-version`` less than
+     1.5.

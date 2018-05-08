@@ -63,6 +63,14 @@ class TestInventory(base.BaseTestCase):
         self.assertIn('No inventory of class VCPU found for delete',
                       exc.output.decode('utf-8'))
 
+    def test_delete_all_inventories(self):
+        # Negative test to assert command failure because
+        # microversion < 1.5 and --resource-class is not specified.
+        self.assertCommandFailed(
+            'argument --resource-class is required',
+            self.resource_inventory_delete,
+            'fake_uuid')
+
 
 class TestSetInventory(base.BaseTestCase):
     def test_fail_if_no_rp(self):
@@ -194,3 +202,13 @@ class TestSetInventory(base.BaseTestCase):
         self.assertEqual(128, inv['MEMORY_MB']['total'])
         self.assertEqual(16, inv['MEMORY_MB']['step_size'])
         self.assertEqual(32, inv['VCPU']['total'])
+
+
+class TestInventory15(TestInventory):
+    VERSION = '1.5'
+
+    def test_delete_all_inventories(self):
+        rp = self.resource_provider_create()
+        self.resource_inventory_set(rp['uuid'], 'MEMORY_MB=16', 'VCPU=32')
+        self.resource_inventory_delete(rp['uuid'])
+        self.assertEqual([], self.resource_inventory_list(rp['uuid']))

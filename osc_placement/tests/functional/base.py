@@ -147,10 +147,10 @@ class BaseTestCase(base.BaseTestCase):
         return self.openstack('resource provider inventory list ' + uuid,
                               use_json=True)
 
-    def resource_inventory_delete(self, uuid, resource_class):
-        cmd = 'resource provider inventory delete {uuid} {rc}'.format(
-            uuid=uuid, rc=resource_class
-        )
+    def resource_inventory_delete(self, uuid, resource_class=None):
+        cmd = 'resource provider inventory delete {uuid}'.format(uuid=uuid)
+        if resource_class:
+            cmd += ' --resource-class ' + resource_class
         self.openstack(cmd)
 
     def resource_inventory_set(self, uuid, *resources):

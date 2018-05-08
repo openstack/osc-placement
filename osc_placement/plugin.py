@@ -15,21 +15,15 @@
 import logging
 
 from osc_lib import utils
+from osc_placement import version
 
 
 LOG = logging.getLogger(__name__)
 
 API_NAME = 'placement'
 API_VERSION_OPTION = 'os_placement_api_version'
-SUPPORTED_VERSIONS = [
-    '1.0',
-    '1.1',
-    '1.2',
-    '1.3',
-    '1.4'
-]
 API_VERSIONS = {v: 'osc_placement.http.SessionClient'
-                for v in SUPPORTED_VERSIONS}
+                for v in version.SUPPORTED_VERSIONS}
 
 
 def make_client(instance):
@@ -51,13 +45,14 @@ def make_client(instance):
 
 
 def build_option_parser(parser):
+    default = version.SUPPORTED_VERSIONS[0]
     parser.add_argument(
         '--os-placement-api-version',
         metavar='<placement-api-version>',
         default=utils.env(
             'OS_PLACEMENT_API_VERSION',
-            default='1.0'
+            default=default
         ),
-        help='Placement API version, default=1.0'
-    )
+        help='Placement API version, default=%s' % default)
+
     return parser
