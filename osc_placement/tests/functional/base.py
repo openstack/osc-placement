@@ -213,7 +213,7 @@ class BaseTestCase(base.BaseTestCase):
             except subprocess.CalledProcessError as exc:
                 # may have already been deleted by a test case
                 err_message = exc.output.decode('utf-8').lower()
-                if 'not found' not in err_message:
+                if 'http 404' not in err_message:
                     raise
         self.addCleanup(cleanup)
 

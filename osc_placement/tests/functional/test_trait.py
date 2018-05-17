@@ -64,7 +64,7 @@ class TestTrait(base.BaseTestCase):
         self.assertEqual({'name': TRAIT}, self.trait_show(TRAIT))
 
     def test_fail_show_unknown_trait(self):
-        self.assertCommandFailed('Not found', self.trait_show, 'UNKNOWN')
+        self.assertCommandFailed('HTTP 404', self.trait_show, 'UNKNOWN')
 
     def test_set_multiple_traits(self):
         self.trait_create(TRAIT + '1')
@@ -99,7 +99,7 @@ class TestTrait(base.BaseTestCase):
     def test_delete_trait(self):
         self.trait_create(TRAIT)
         self.trait_delete(TRAIT)
-        self.assertCommandFailed('Not found', self.trait_show, TRAIT)
+        self.assertCommandFailed('HTTP 404', self.trait_show, TRAIT)
 
     def test_fail_rp_trait_list_unknown_uuid(self):
         self.assertCommandFailed(
