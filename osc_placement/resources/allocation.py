@@ -183,7 +183,7 @@ class ShowAllocation(command.Lister, version.CheckerMixin):
 
 
 class DeleteAllocation(command.Command):
-    """Delete a resource allocation for a given consumer."""
+    """Delete all resource allocations for a given consumer."""
 
     def get_parser(self, prog_name):
         parser = super(DeleteAllocation, self).get_parser(prog_name)
