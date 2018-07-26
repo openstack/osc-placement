@@ -31,12 +31,14 @@ def _wrap_http_exceptions():
     try:
         yield
     except ks_exceptions.HttpError as exc:
-        detail = json.loads(exc.response.content)['errors'][0]['detail']
-        msg = detail.split('\n')[-1].strip()
-        exc_class = _http_error_to_exc.get(exc.http_status,
-                                           exceptions.CommandError)
-
-        six.raise_from(exc_class(exc.http_status, msg), exc)
+        if 400 <= exc.http_status < 500:
+            detail = json.loads(exc.response.content)['errors'][0]['detail']
+            msg = detail.split('\n')[-1].strip()
+            exc_class = _http_error_to_exc.get(exc.http_status,
+                                               exceptions.CommandError)
+            six.raise_from(exc_class(exc.http_status, msg), exc)
+        else:
+            raise
 
 
 class SessionClient(object):

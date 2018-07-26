@@ -41,3 +41,12 @@ class TestSessionClient(base.BaseTestCase):
         self.assertEqual(404, exc.http_status)
         self.assertIn('No resource provider with uuid 123 found',
                       six.text_type(exc))
+
+    def test_unexpected_response(self):
+        def go():
+            with http._wrap_http_exceptions():
+                raise ks_exceptions.InternalServerError()
+
+        exc = self.assertRaises(ks_exceptions.InternalServerError, go)
+        self.assertEqual(500, exc.http_status)
+        self.assertIn('Internal Server Error (HTTP 500)', six.text_type(exc))
