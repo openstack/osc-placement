@@ -35,7 +35,7 @@ class SetAggregate(command.Lister):
 
         parser.add_argument(
             'uuid',
-            metavar='<name>',
+            metavar='<uuid>',
             help='UUID of the resource provider'
         )
 
