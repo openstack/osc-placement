@@ -12,7 +12,6 @@
 
 import json
 import random
-import string
 import subprocess
 
 from oslotest import base
@@ -47,6 +46,25 @@ class BaseTestCase(base.BaseTestCase):
         else:
             return result
 
+    def rand_name(self, name='', prefix=None):
+        """Generate a random name that includes a random number
+
+        :param str name: The name that you want to include
+        :param str prefix: The prefix that you want to include
+        :return: a random name. The format is
+                 '<prefix>-<name>-<random number>'.
+                 (e.g. 'prefixfoo-namebar-154876201')
+        :rtype: string
+        """
+        # NOTE(lajos katona): This method originally is in tempest-lib.
+        randbits = str(random.randint(1, 0x7fffffff))
+        rand_name = randbits
+        if name:
+            rand_name = name + '-' + rand_name
+        if prefix:
+            rand_name = prefix + '-' + rand_name
+        return rand_name
+
     def assertCommandFailed(self, message, func, *args, **kwargs):
         signature = [func]
         signature.extend(args)
@@ -63,9 +81,7 @@ class BaseTestCase(base.BaseTestCase):
                                  name='',
                                  parent_provider_uuid=None):
         if not name:
-            random_part = ''.join(random.choice(string.ascii_letters)
-                                  for i in range(10))
-            name = RP_PREFIX + random_part
+            name = self.rand_name(name='', prefix=RP_PREFIX)
 
         to_exec = 'resource provider create ' + name
         if parent_provider_uuid is not None:

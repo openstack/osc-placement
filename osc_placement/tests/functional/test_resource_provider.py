@@ -21,8 +21,9 @@ from osc_placement.tests.functional import base
 
 class TestResourceProvider(base.BaseTestCase):
     def test_resource_provider_create(self):
-        created = self.resource_provider_create('test_rp_creation')
-        self.assertEqual('test_rp_creation', created['name'])
+        name = self.rand_name('test_rp_creation')
+        created = self.resource_provider_create(name)
+        self.assertEqual(name, created['name'])
 
         retrieved = self.resource_provider_show(created['uuid'])
         self.assertEqual(created, retrieved)
@@ -47,15 +48,17 @@ class TestResourceProvider(base.BaseTestCase):
         self.assertIn(msg, exc.output.decode('utf-8'))
 
     def test_resource_provider_set(self):
-        created = self.resource_provider_create(name='test_rp_orig_name')
+        orig_name = self.rand_name('test_rp_orig_name')
+        created = self.resource_provider_create(name=orig_name)
 
         before_update = self.resource_provider_show(created['uuid'])
-        self.assertEqual('test_rp_orig_name', before_update['name'])
+        self.assertEqual(orig_name, before_update['name'])
         self.assertEqual(0, before_update['generation'])
 
-        self.resource_provider_set(created['uuid'], name='test_rp_new_name')
+        new_name = self.rand_name('test_rp_new_name')
+        self.resource_provider_set(created['uuid'], name=new_name)
         after_update = self.resource_provider_show(created['uuid'])
-        self.assertEqual('test_rp_new_name', after_update['name'])
+        self.assertEqual(new_name, after_update['name'])
         self.assertEqual(0, after_update['generation'])
 
     def test_resource_provider_set_not_found(self):
