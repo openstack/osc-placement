@@ -57,6 +57,7 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
         parser.add_argument(
             '--resource',
             metavar='<resource_class>=<value>',
+            dest='resources',
             action='append',
             default=[],
             help='String indicating an amount of resource of a specified '
@@ -90,14 +91,20 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
 
     @version.check(version.ge('1.10'))
     def take_action(self, parsed_args):
-        if not parsed_args.resource:
+        if not parsed_args.resources:
             raise exceptions.CommandError(
                 'At least one --resource must be specified.')
+
+        for resource in parsed_args.resources:
+            if not len(resource.split('=')) == 2:
+                raise exceptions.CommandError(
+                    'Arguments to --resource must be of form '
+                    '<resource_class>=<value>')
 
         http = self.app.client_manager.placement
 
         params = {'resources': ','.join(
-            resource.replace('=', ':') for resource in parsed_args.resource)}
+            resource.replace('=', ':') for resource in parsed_args.resources)}
         if 'limit' in parsed_args and parsed_args.limit:
             # Fail if --limit but not high enough microversion.
             self.check_version(version.ge('1.16'))
