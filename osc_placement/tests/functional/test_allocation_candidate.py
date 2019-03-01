@@ -129,6 +129,10 @@ class TestAllocationCandidate116(base.BaseTestCase):
 class TestAllocationCandidate117(base.BaseTestCase):
     VERSION = '1.17'
 
+    # NOTE(cdent): The choice of traits here is important. We need to
+    # make sure that we do not overlap with 'test_show_required_trait'
+    # in TestResourceProvider118 which also creates some resource
+    # providers. In a multi-process enviromment, the tests can race.
     def test_show_required_trait(self):
         rp1 = self.resource_provider_create()
         rp2 = self.resource_provider_create()

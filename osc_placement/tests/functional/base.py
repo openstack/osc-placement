@@ -123,7 +123,7 @@ class BaseTestCase(base.BaseTestCase):
 
     def resource_provider_list(self, uuid=None, name=None,
                                aggregate_uuids=None, resources=None,
-                               in_tree=None):
+                               in_tree=None, required=None):
         to_exec = 'resource provider list'
         if uuid:
             to_exec += ' --uuid ' + uuid
@@ -136,6 +136,8 @@ class BaseTestCase(base.BaseTestCase):
             to_exec += ' ' + ' '.join('--resource %s' % r for r in resources)
         if in_tree:
             to_exec += ' --in-tree ' + in_tree
+        if required:
+            to_exec += ' ' + ' '.join('--required %s' % t for t in required)
 
         return self.openstack(to_exec, use_json=True)
 

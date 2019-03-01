@@ -118,6 +118,16 @@ class ListResourceProvider(command.Lister, version.CheckerMixin):
                  ' This option requires at least'
                  ' ``--os-placement-api-version 1.14``.'
         )
+        parser.add_argument(
+            '--required',
+            metavar='<required>',
+            action='append',
+            default=[],
+            help='A required trait. May be repeated. Resource providers '
+                 'must collectively contain all of the required traits. '
+                 'This option requires at least '
+                 '``--os-placement-api-version 1.18``.'
+        )
 
         return parser
 
@@ -140,6 +150,9 @@ class ListResourceProvider(command.Lister, version.CheckerMixin):
         if 'in_tree' in parsed_args and parsed_args.in_tree:
             self.check_version(version.ge('1.14'))
             filters['in_tree'] = parsed_args.in_tree
+        if 'required' in parsed_args and parsed_args.required:
+            self.check_version(version.ge('1.18'))
+            filters['required'] = ','.join(parsed_args.required)
 
         url = common.url_with_filters(BASE_URL, filters)
         resources = http.request('GET', url).json()['resource_providers']
