@@ -14,9 +14,11 @@
 
 # This script is executed inside post_test_hook function in devstack gate.
 
+TOX_ENV=${TOX_ENV:-functional}
+
 function generate_testr_results {
-    if [ -f .testrepository/0 ]; then
-        .tox/functional/bin/testr last --subunit > $WORKSPACE/testrepository.subunit
+    if [ -f .stestr/0 ]; then
+        .tox/$TOX_ENV/bin/stestr last --subunit > $WORKSPACE/testrepository.subunit
         mv $WORKSPACE/testrepository.subunit $BASE/logs/testrepository.subunit
         /usr/os-testr-env/bin/subunit2html $BASE/logs/testrepository.subunit $BASE/logs/testr_results.html
         gzip -9 $BASE/logs/testrepository.subunit
@@ -37,7 +39,7 @@ echo "Running osc-placement functional test suite"
 set +e
 # Preserve env for OS_ credentials
 source $BASE/new/devstack/openrc admin admin
-tox -e ${TOX_ENV:-functional}
+tox -e $TOX_ENV
 EXIT_CODE=$?
 set -e
 

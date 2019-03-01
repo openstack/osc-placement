@@ -67,7 +67,7 @@ class TestInventory(base.BaseTestCase):
         # Negative test to assert command failure because
         # microversion < 1.5 and --resource-class is not specified.
         self.assertCommandFailed(
-            'argument --resource-class is required',
+            base.ARGUMENTS_REQUIRED % '--resource-class',
             self.resource_inventory_delete,
             'fake_uuid')
 
@@ -77,7 +77,7 @@ class TestSetInventory(base.BaseTestCase):
         exc = self.assertRaises(
             subprocess.CalledProcessError,
             self.openstack, 'resource provider inventory set')
-        self.assertIn('too few arguments', exc.output.decode('utf-8'))
+        self.assertIn(base.ARGUMENTS_MISSING, exc.output.decode('utf-8'))
 
     def test_set_empty_inventories(self):
         rp = self.resource_provider_create()
@@ -173,11 +173,11 @@ class TestSetInventory(base.BaseTestCase):
         exc = self.assertRaises(
             subprocess.CalledProcessError,
             self.openstack, 'resource provider inventory class set')
-        self.assertIn('too few arguments', exc.output.decode('utf-8'))
+        self.assertIn(base.ARGUMENTS_MISSING, exc.output.decode('utf-8'))
         exc = self.assertRaises(
             subprocess.CalledProcessError,
             self.openstack, 'resource provider inventory class set fake_uuid')
-        self.assertIn('too few arguments', exc.output.decode('utf-8'))
+        self.assertIn(base.ARGUMENTS_MISSING, exc.output.decode('utf-8'))
         exc = self.assertRaises(
             subprocess.CalledProcessError,
             self.openstack,
@@ -189,7 +189,7 @@ class TestSetInventory(base.BaseTestCase):
         exc = self.assertRaises(
             subprocess.CalledProcessError, self.openstack,
             'resource provider inventory class set %s VCPU' % rp['uuid'])
-        self.assertIn('argument --total is required',
+        self.assertIn(base.ARGUMENTS_REQUIRED % '--total',
                       exc.output.decode('utf-8'))
 
     def test_set_inventory_for_resource_class(self):

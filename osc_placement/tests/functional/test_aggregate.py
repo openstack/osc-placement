@@ -20,7 +20,7 @@ class TestAggregate(base.BaseTestCase):
 
     def test_fail_if_no_rp(self):
         self.assertCommandFailed(
-            'too few arguments',
+            base.ARGUMENTS_MISSING,
             self.openstack,
             'resource provider aggregate list')
 
@@ -50,7 +50,7 @@ class TestAggregate(base.BaseTestCase):
 
     def test_set_aggregate_fail_if_no_rp(self):
         self.assertCommandFailed(
-            'too few arguments',
+            base.ARGUMENTS_MISSING,
             self.openstack,
             'resource provider aggregate set')
 

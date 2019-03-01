@@ -47,6 +47,7 @@
           export PYTHONUNBUFFERED=true
           export DEVSTACK_PROJECT_FROM_GIT=osc-placement
           export DEVSTACK_GATE_USE_PYTHON3=True
+          export TOX_ENV=functional-py3
 
           function post_test_hook {
               # Configure and run functional tests

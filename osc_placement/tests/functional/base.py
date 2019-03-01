@@ -10,14 +10,22 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import json
 import random
+import six
 import subprocess
 
 from oslotest import base
+import simplejson as json
 
 
 RP_PREFIX = 'osc-placement-functional-tests-'
+
+# argparse in python 2 and 3 have different error messages
+ARGUMENTS_MISSING = 'too few arguments'
+ARGUMENTS_REQUIRED = 'argument %s is required'
+if six.PY3:
+    ARGUMENTS_MISSING = 'the following arguments are required'
+    ARGUMENTS_REQUIRED = 'the following arguments are required: %s'
 
 
 class BaseTestCase(base.BaseTestCase):
@@ -74,7 +82,7 @@ class BaseTestCase(base.BaseTestCase):
 
         except subprocess.CalledProcessError as e:
             self.assertIn(
-                message, e.output,
+                message, six.text_type(e.output),
                 'Command "%s" fails with different message' % e.cmd)
 
     def resource_provider_create(self,
