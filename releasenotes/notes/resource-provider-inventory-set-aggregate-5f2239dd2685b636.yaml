@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    A new ``--aggregate`` option has been added to the ``resource provider
+    inventory set`` command which can set resource provider inventory for
+    all resource providers that are members of the specified aggregate.
+    For example, VCPU, MEMORY_MB, and/or DISK_GB allocation ratios can be
+    managed in aggregate to resolve `bug 1804125`_.
+
+    .. _bug 1804125: https://docs.openstack.org/nova/latest/admin/configuration/schedulers.html#bug-1804125

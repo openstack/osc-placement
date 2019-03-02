@@ -11,10 +11,15 @@
 # under the License.
 
 from collections import defaultdict
+import itertools
 
 from osc_lib.command import command
+from osc_lib import exceptions
+from osc_lib.i18n import _
 from osc_lib import utils
+from oslo_utils import excutils
 
+from osc_placement.resources import common
 from osc_placement import version
 
 
@@ -92,7 +97,7 @@ def parse_resource_argument(resource):
     return name, field, value
 
 
-class SetInventory(command.Lister):
+class SetInventory(command.Lister, version.CheckerMixin):
 
     """Replaces the set of inventory records for the resource provider.
 
@@ -117,7 +122,8 @@ class SetInventory(command.Lister):
         parser.add_argument(
             'uuid',
             metavar='<uuid>',
-            help='UUID of the resource provider'
+            help='UUID of the resource provider or UUID of the aggregate, '
+                 'if --aggregate is specified'
         )
         fields_help = '\n'.join(
             '{} - {}'.format(f, INVENTORY_FIELDS[f]['help'].lower())
@@ -130,34 +136,91 @@ class SetInventory(command.Lister):
             default=[],
             action='append'
         )
+        parser.add_argument(
+            '--aggregate',
+            action='store_true',
+            help='If this option is specified, the inventories for all '
+                 'resource providers that are members of the aggregate will '
+                 'be set. This option requires at least '
+                 '``--os-placement-api-version 1.3``'
+        )
 
         return parser
 
     def take_action(self, parsed_args):
 
-        inventories = defaultdict(dict)
-        for r in parsed_args.resource:
-            name, field, value = parse_resource_argument(r)
-            inventories[name][field] = value
-
         http = self.app.client_manager.placement
 
-        url = RP_BASE_URL + '/' + parsed_args.uuid
-        rp = http.request('GET', url).json()
+        if parsed_args.aggregate:
+            self.check_version(version.ge('1.3'))
+            filters = {'member_of': parsed_args.uuid}
+            url = common.url_with_filters(RP_BASE_URL, filters)
+            rps = http.request('GET', url).json()['resource_providers']
+            if not rps:
+                raise exceptions.CommandError(
+                    'No resource providers found in aggregate with uuid %s.' %
+                    parsed_args.uuid)
+        else:
+            url = RP_BASE_URL + '/' + parsed_args.uuid
+            rps = [http.request('GET', url).json()]
 
-        payload = {'inventories': inventories,
-                   'resource_provider_generation': rp['generation']}
-        url = BASE_URL.format(uuid=parsed_args.uuid)
-        resources = http.request('PUT', url, json=payload).json()
+        resources_list = []
+        ret = 0
+        for rp in rps:
+            inventories = defaultdict(dict)
+            url = BASE_URL.format(uuid=rp['uuid'])
+            payload = {'inventories': inventories,
+                       'resource_provider_generation': rp['generation']}
 
-        inventories = [
-            dict(resource_class=k, **v)
-            for k, v in resources['inventories'].items()
-        ]
+            # Apply resource values to inventories
+            for r in parsed_args.resource:
+                name, field, value = parse_resource_argument(r)
+                inventories[name][field] = value
+
+            try:
+                resources = http.request('PUT', url, json=payload).json()
+            except Exception as exp:
+                with excutils.save_and_reraise_exception() as err_ctx:
+                    if parsed_args.aggregate:
+                        self.log.error(_('Failed to set inventory for '
+                                         'resource provider %(rp)s: %(exp)s.'),
+                                       {'rp': rp['uuid'], 'exp': exp})
+                        err_ctx.reraise = False
+                        ret += 1
+                        continue
+            resources_list.append((rp['uuid'], resources))
+
+        if ret > 0:
+            msg = _('Failed to set inventory for %(ret)s of %(total)s '
+                    'resource providers.') % {'ret': ret, 'total': len(rps)}
+            raise exceptions.CommandError(msg)
+
+        def get_rows(fields, resources, rp_uuid=None):
+            inventories = [
+                dict(resource_class=k, **v)
+                for k, v in resources['inventories'].items()
+            ]
+            prepend = (rp_uuid, ) if rp_uuid else ()
+            # This is a generator expression
+            rows = (prepend + utils.get_dict_properties(i, fields)
+                    for i in inventories)
+            return rows
 
         fields = ('resource_class', ) + FIELDS
-        rows = (utils.get_dict_properties(i, fields) for i in inventories)
-        return fields, rows
+        if parsed_args.aggregate:
+            # If this is an aggregate batch, create output that will include
+            # resource provider as the first field to differentiate the values
+            rows = ()
+            for rp_uuid, resources in resources_list:
+                subrows = get_rows(fields, resources, rp_uuid=rp_uuid)
+                rows = itertools.chain(rows, subrows)
+            fields = ('resource_provider', ) + fields
+            return fields, rows
+        else:
+            # If this was not an aggregate batch, show output for the one
+            # resource provider (show payload of the first item in the list),
+            # keeping the behavior prior to the addition of --aggregate option
+            return fields, get_rows(fields, resources_list[0][1])
 
 
 class SetClassInventory(command.ShowOne):

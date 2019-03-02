@@ -7,3 +7,4 @@ six>=1.10.0 # MIT
 keystoneauth1>=3.3.0 # Apache-2.0
 simplejson>=3.16.0 # MIT
 osc-lib>=1.2.0  # Apache-2.0
+oslo.utils>=3.37.0 # Apache-2.0

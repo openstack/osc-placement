@@ -262,10 +262,15 @@ class BaseTestCase(base.BaseTestCase):
             cmd += ' --resource-class ' + resource_class
         self.openstack(cmd)
 
-    def resource_inventory_set(self, uuid, *resources):
-        cmd = 'resource provider inventory set {uuid} {resources}'.format(
-            uuid=uuid, resources=' '.join(
-                ['--resource %s' % r for r in resources]))
+    def resource_inventory_set(self, uuid, *resources, **kwargs):
+        opts = []
+        if kwargs.get('aggregate'):
+            opts.append('--aggregate')
+        fmt = 'resource provider inventory set {uuid} {resources} {opts}'
+        cmd = fmt.format(
+            uuid=uuid,
+            resources=' '.join(['--resource %s' % r for r in resources]),
+            opts=' '.join(opts))
         return self.openstack(cmd, use_json=True)
 
     def resource_inventory_class_set(self, uuid, resource_class, **kwargs):
