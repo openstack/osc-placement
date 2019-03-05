@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Support is added for the `1.19`_ placement API microversion by adding
+    the ``--generation`` option to the
+    ``openstack resource provider aggregate set`` command.
+
+    .. _1.19: https://docs.openstack.org/placement/latest/placement-api-microversion-history.html#include-generation-and-conflict-detection-in-provider-aggregates-apis

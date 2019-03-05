@@ -220,10 +220,14 @@ class BaseTestCase(base.BaseTestCase):
         return self.openstack('resource provider aggregate list ' + uuid,
                               use_json=True)
 
-    def resource_provider_aggregate_set(self, uuid, *aggregates):
+    def resource_provider_aggregate_set(self, uuid, *aggregates,
+                                        **kwargs):
+        generation = kwargs.get('generation')
         cmd = 'resource provider aggregate set %s ' % uuid
         cmd += ' '.join('--aggregate %s' % aggregate
                         for aggregate in aggregates)
+        if generation is not None:
+            cmd += ' --generation %s' % generation
         return self.openstack(cmd, use_json=True)
 
     def resource_class_list(self):
