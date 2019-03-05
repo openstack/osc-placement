@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    The ``openstack allocation candidate list`` command now supports
+    microversion `1.21`_. An ``--aggregate-uuid`` option is added which limits
+    the list of results to include only those resource providers that are in
+    at least one of the aggregates.
+
+    See the `command documentation`__ for more details.
+
+    .. _1.21: https://docs.openstack.org/placement/latest/placement-api-microversion-history.html#support-member-of-aggregates-queryparam-on-get-allocation-candidates
+    .. __: https://docs.openstack.org/osc-placement/latest/cli/index.html#allocation-candidate-list
