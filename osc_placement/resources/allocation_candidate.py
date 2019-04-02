@@ -87,6 +87,16 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
                  '``--os-placement-api-version 1.17``.'
         )
         parser.add_argument(
+            '--forbidden',
+            metavar='<forbidden>',
+            action='append',
+            default=[],
+            help='A forbidden trait. May be repeated. Returned allocation '
+                 'candidates must not contain any of the specified traits. '
+                 'This option requires at least '
+                 '``--os-placement-api-version 1.22``.'
+        )
+        parser.add_argument(
             '--aggregate-uuid',
             default=[],
             action='append',
@@ -126,6 +136,14 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
             # Fail if --required but not high enough microversion.
             self.check_version(version.ge('1.17'))
             params['required'] = ','.join(parsed_args.required)
+        if 'forbidden' in parsed_args and parsed_args.forbidden:
+            self.check_version(version.ge('1.22'))
+            forbidden_traits = ','.join(
+                ['!' + f for f in parsed_args.forbidden])
+            if 'required' in params:
+                params['required'] += ',' + forbidden_traits
+            else:
+                params['required'] = forbidden_traits
         if 'aggregate_uuid' in parsed_args and parsed_args.aggregate_uuid:
             # Fail if --aggregate_uuid but not high enough microversion.
             self.check_version(version.ge('1.21'))

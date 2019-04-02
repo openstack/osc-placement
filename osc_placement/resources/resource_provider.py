@@ -128,6 +128,16 @@ class ListResourceProvider(command.Lister, version.CheckerMixin):
                  'This option requires at least '
                  '``--os-placement-api-version 1.18``.'
         )
+        parser.add_argument(
+            '--forbidden',
+            metavar='<forbidden>',
+            action='append',
+            default=[],
+            help='A forbidden trait. May be repeated. Returned resource '
+                 'providers must not contain any of the specified traits. '
+                 'This option requires at least '
+                 '``--os-placement-api-version 1.22``.'
+        )
 
         return parser
 
@@ -153,6 +163,14 @@ class ListResourceProvider(command.Lister, version.CheckerMixin):
         if 'required' in parsed_args and parsed_args.required:
             self.check_version(version.ge('1.18'))
             filters['required'] = ','.join(parsed_args.required)
+        if 'forbidden' in parsed_args and parsed_args.forbidden:
+            self.check_version(version.ge('1.22'))
+            forbidden_traits = ','.join(
+                ['!' + f for f in parsed_args.forbidden])
+            if 'required' in filters:
+                filters['required'] += ',' + forbidden_traits
+            else:
+                filters['required'] = forbidden_traits
 
         url = common.url_with_filters(BASE_URL, filters)
         resources = http.request('GET', url).json()['resource_providers']

@@ -189,7 +189,7 @@ class BaseTestCase(base.BaseTestCase):
 
     def resource_provider_list(self, uuid=None, name=None,
                                aggregate_uuids=None, resources=None,
-                               in_tree=None, required=None):
+                               in_tree=None, required=None, forbidden=None):
         to_exec = 'resource provider list'
         if uuid:
             to_exec += ' --uuid ' + uuid
@@ -204,6 +204,8 @@ class BaseTestCase(base.BaseTestCase):
             to_exec += ' --in-tree ' + in_tree
         if required:
             to_exec += ' ' + ' '.join('--required %s' % t for t in required)
+        if forbidden:
+            to_exec += ' ' + ' '.join('--forbidden %s' % f for f in forbidden)
 
         return self.openstack(to_exec, use_json=True)
 
@@ -354,12 +356,15 @@ class BaseTestCase(base.BaseTestCase):
         cmd = 'resource provider trait delete %s ' % uuid
         self.openstack(cmd)
 
-    def allocation_candidate_list(self, resources, required=None, limit=None,
+    def allocation_candidate_list(self, resources, required=None,
+                                  forbidden=None, limit=None,
                                   aggregate_uuids=None):
         cmd = 'allocation candidate list ' + ' '.join(
             '--resource %s' % resource for resource in resources)
         if required is not None:
             cmd += ''.join([' --required %s' % t for t in required])
+        if forbidden:
+            cmd += ' ' + ' '.join('--forbidden %s' % f for f in forbidden)
         if limit is not None:
             cmd += ' --limit %d' % limit
         if aggregate_uuids:

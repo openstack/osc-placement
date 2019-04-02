@@ -37,6 +37,7 @@ SUPPORTED_VERSIONS = [
     '1.19',
     '1.20',  # unused
     '1.21',
+    '1.22',
 ]
 
 

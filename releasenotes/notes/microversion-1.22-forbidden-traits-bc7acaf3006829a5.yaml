@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    The `1.22 microversion`_ of placement adds support for
+    excluding resource providers and allocation candidates
+    with specified traits. A forbidden trait may be specified
+    with ``--forbidden`` option.
+
+    .. _1.22 microversion: https://docs.openstack.org/placement/latest/placement-api-microversion-history.html#support-forbidden-traits-on-resource-providers-and-allocations-candidates
