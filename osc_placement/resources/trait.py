@@ -99,7 +99,7 @@ class CreateTrait(command.Command):
 
     """Create a new custom trait.
 
-    Custom traits must begin with the prefix "CUSTOM_" and contain only the
+    Custom traits must begin with the prefix ``CUSTOM_`` and contain only the
     letters A through Z, the numbers 0 through 9 and the underscore "_"
     character.
 

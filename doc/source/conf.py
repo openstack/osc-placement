@@ -21,9 +21,9 @@ sys.path.insert(0, os.path.abspath('../..'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
+    'openstackdocstheme',
     'sphinx.ext.autodoc',
     #'sphinx.ext.intersphinx',
-    'oslosphinx',
     'cliff.sphinxext'
 ]
 
@@ -58,6 +58,7 @@ pygments_style = 'sphinx'
 # html_theme_path = ["."]
 # html_theme = '_theme'
 # html_static_path = ['static']
+html_theme = 'openstackdocs'
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = '%sdoc' % project
@@ -81,3 +82,7 @@ autoprogram_cliff_application = 'openstack'
 autoprogram_cliff_ignored = [
     '--help', '--format', '--column', '--max-width', '--fit-width',
     '--print-empty', '--prefix', '--noindent', '--quote']
+
+# openstackdocstheme options
+repository_name = 'openstack/osc-placement'
+use_storyboard = True
