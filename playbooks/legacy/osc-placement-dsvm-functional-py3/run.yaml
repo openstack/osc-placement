@@ -27,27 +27,14 @@
         cmd: |
           set -e
           set -x
-          cat << 'EOF' >>"/tmp/dg-local.conf"
-          [[local|localrc]]
-          # swift is not ready for python3 yet
-          disable_service s-account
-          disable_service s-container
-          disable_service s-object
-          disable_service s-proxy
-
-          EOF
-        executable: /bin/bash
-        chdir: '{{ ansible_user_dir }}/workspace'
-      environment: '{{ zuul | zuul_legacy_vars }}'
-
-    - shell:
-        cmd: |
-          set -e
-          set -x
           export PYTHONUNBUFFERED=true
           export DEVSTACK_PROJECT_FROM_GIT=osc-placement
           export DEVSTACK_GATE_USE_PYTHON3=True
           export TOX_ENV=functional-py3
+          # Only enable keystone and placement to make devstack setup faster.
+          # We enable mysql since we need a database, but don't need rabbit
+          # or anything else really.
+          export OVERRIDE_ENABLED_SERVICES=key,placement-api,mysql
 
           function post_test_hook {
               # Configure and run functional tests
