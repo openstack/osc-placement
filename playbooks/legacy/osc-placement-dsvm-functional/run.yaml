@@ -29,6 +29,10 @@
           set -x
           export PYTHONUNBUFFERED=true
           export DEVSTACK_PROJECT_FROM_GIT=osc-placement
+          # Only enable keystone and placement to make devstack setup faster.
+          # We enable mysql since we need a database, but don't need rabbit
+          # or anything else really.
+          export OVERRIDE_ENABLED_SERVICES=key,placement-api,mysql
 
           function post_test_hook {
               # Configure and run functional tests
