@@ -1,26 +1,3 @@
-- job:
-    name: osc-placement-dsvm-functional
-    parent: legacy-dsvm-base
-    run: playbooks/legacy/osc-placement-dsvm-functional/run.yaml
-    post-run: playbooks/legacy/osc-placement-dsvm-functional/post.yaml
-    timeout: 7200
-    required-projects:
-      - openstack/devstack-gate
-      - openstack/osc-placement
-
-- job:
-    name: osc-placement-dsvm-functional-py3
-    parent: legacy-dsvm-base
-    description: |
-      Runs the osc-placement functional tests in a python 3 devstack
-      environment.
-    run: playbooks/legacy/osc-placement-dsvm-functional-py3/run.yaml
-    post-run: playbooks/legacy/osc-placement-dsvm-functional-py3/post.yaml
-    timeout: 7200
-    required-projects:
-      - openstack/devstack-gate
-      - openstack/osc-placement
-
 - project:
     templates:
       - openstack-python-jobs
@@ -32,9 +9,17 @@
       - release-notes-jobs-python3
     check:
       jobs:
-        - osc-placement-dsvm-functional
-        - osc-placement-dsvm-functional-py3
+        - openstack-tox-functional:
+            required-projects:
+              - openstack/placement
+        - openstack-tox-functional-py36:
+            required-projects:
+              - openstack/placement
     gate:
       jobs:
-        - osc-placement-dsvm-functional
-        - osc-placement-dsvm-functional-py3
+        - openstack-tox-functional:
+            required-projects:
+              - openstack/placement
+        - openstack-tox-functional-py36:
+            required-projects:
+              - openstack/placement

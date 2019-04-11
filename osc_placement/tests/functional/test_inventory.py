@@ -10,7 +10,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import subprocess
+import six
 
 from osc_placement.tests.functional import base
 
@@ -38,11 +38,11 @@ class TestInventory(base.BaseTestCase):
     def test_inventory_show_not_found(self):
         rp_uuid = self.rp['uuid']
 
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_show,
                                 rp_uuid, 'VCPU')
         self.assertIn('No inventory of class VCPU for {}'.format(rp_uuid),
-                      exc.output.decode('utf-8'))
+                      six.text_type(exc))
 
     def test_inventory_delete(self):
         rp_uuid = self.rp['uuid']
@@ -50,18 +50,18 @@ class TestInventory(base.BaseTestCase):
         self.resource_inventory_set(rp_uuid, 'VCPU=8')
 
         self.resource_inventory_delete(rp_uuid, 'VCPU')
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_show,
                                 rp_uuid, 'VCPU')
         self.assertIn('No inventory of class VCPU for {}'.format(rp_uuid),
-                      exc.output.decode('utf-8'))
+                      six.text_type(exc))
 
     def test_inventory_delete_not_found(self):
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_delete,
                                 self.rp['uuid'], 'VCPU')
         self.assertIn('No inventory of class VCPU found for delete',
-                      exc.output.decode('utf-8'))
+                      six.text_type(exc))
 
     def test_delete_all_inventories(self):
         # Negative test to assert command failure because
@@ -75,9 +75,9 @@ class TestInventory(base.BaseTestCase):
 class TestSetInventory(base.BaseTestCase):
     def test_fail_if_no_rp(self):
         exc = self.assertRaises(
-            subprocess.CalledProcessError,
+            base.CommandException,
             self.openstack, 'resource provider inventory set')
-        self.assertIn(base.ARGUMENTS_MISSING, exc.output.decode('utf-8'))
+        self.assertIn(base.ARGUMENTS_MISSING, six.text_type(exc))
 
     def test_set_empty_inventories(self):
         rp = self.resource_provider_create()
@@ -86,33 +86,33 @@ class TestSetInventory(base.BaseTestCase):
     def test_fail_if_incorrect_resource(self):
         rp = self.resource_provider_create()
         # wrong format
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], 'VCPU')
-        self.assertIn('must have "name=value"', exc.output.decode('utf-8'))
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        self.assertIn('must have "name=value"', six.text_type(exc))
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], 'VCPU==')
-        self.assertIn('must have "name=value"', exc.output.decode('utf-8'))
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        self.assertIn('must have "name=value"', six.text_type(exc))
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], '=10')
-        self.assertIn('must be not empty', exc.output.decode('utf-8'))
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        self.assertIn('must be not empty', six.text_type(exc))
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], 'v=')
-        self.assertIn('must be not empty', exc.output.decode('utf-8'))
+        self.assertIn('must be not empty', six.text_type(exc))
 
         # unknown class
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], 'UNKNOWN_CPU=16')
-        self.assertIn('Unknown resource class', exc.output.decode('utf-8'))
+        self.assertIn('Unknown resource class', six.text_type(exc))
         # unknown property
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], 'VCPU:fake=16')
-        self.assertIn('Unknown inventory field', exc.output.decode('utf-8'))
+        self.assertIn('Unknown inventory field', six.text_type(exc))
 
     def test_set_multiple_classes(self):
         rp = self.resource_provider_create()
@@ -143,10 +143,10 @@ class TestSetInventory(base.BaseTestCase):
 
     def test_set_known_and_unknown_class(self):
         rp = self.resource_provider_create()
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], 'VCPU=8', 'UNKNOWN=4')
-        self.assertIn('Unknown resource class', exc.output.decode('utf-8'))
+        self.assertIn('Unknown resource class', six.text_type(exc))
         self.assertEqual([], self.resource_inventory_list(rp['uuid']))
 
     def test_replace_previous_values(self):
@@ -171,26 +171,26 @@ class TestSetInventory(base.BaseTestCase):
 
     def test_fail_if_incorrect_parameters_set_class_inventory(self):
         exc = self.assertRaises(
-            subprocess.CalledProcessError,
+            base.CommandException,
             self.openstack, 'resource provider inventory class set')
-        self.assertIn(base.ARGUMENTS_MISSING, exc.output.decode('utf-8'))
+        self.assertIn(base.ARGUMENTS_MISSING, six.text_type(exc))
         exc = self.assertRaises(
-            subprocess.CalledProcessError,
+            base.CommandException,
             self.openstack, 'resource provider inventory class set fake_uuid')
-        self.assertIn(base.ARGUMENTS_MISSING, exc.output.decode('utf-8'))
+        self.assertIn(base.ARGUMENTS_MISSING, six.text_type(exc))
         exc = self.assertRaises(
-            subprocess.CalledProcessError,
+            base.CommandException,
             self.openstack,
             ('resource provider inventory class set '
              'fake_uuid fake_class --total 5 --unknown 1'))
-        self.assertIn('unrecognized arguments', exc.output.decode('utf-8'))
+        self.assertIn('unrecognized arguments', six.text_type(exc))
         # Valid RP UUID and resource class, but no inventory field.
         rp = self.resource_provider_create()
         exc = self.assertRaises(
-            subprocess.CalledProcessError, self.openstack,
+            base.CommandException, self.openstack,
             'resource provider inventory class set %s VCPU' % rp['uuid'])
         self.assertIn(base.ARGUMENTS_REQUIRED % '--total',
-                      exc.output.decode('utf-8'))
+                      six.text_type(exc))
 
     def test_set_inventory_for_resource_class(self):
         rp = self.resource_provider_create()

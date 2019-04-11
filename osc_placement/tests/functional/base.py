@@ -10,13 +10,34 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import logging
 import random
-import six
-import subprocess
 
+import fixtures
+import six
+
+from openstackclient import shell
 from oslotest import base
+from placement.tests.functional.fixtures import capture
+from placement.tests.functional.fixtures import placement
 import simplejson as json
 
+
+# A list of logger names that will be reset to a log level
+# of WARNING. Due (we think) to a poor interaction between the
+# way osc does logging and oslo.logging, all packages are producing
+# DEBUG logs. This results in test attachments (when capturing logs)
+# that are sometimes larger than subunit.parser can deal with. The
+# packages chosen here are ones that do not provide useful information.
+RESET_LOGGING = [
+    'keystoneauth.session',
+    'oslo_policy.policy',
+    'placement.objects.trait',
+    'placement.objects.resource_class',
+    'placement.objects.resource_provider',
+    'oslo_concurrency.lockutils',
+    'osc_lib.shell',
+]
 
 RP_PREFIX = 'osc-placement-functional-tests-'
 
@@ -28,31 +49,77 @@ if six.PY3:
     ARGUMENTS_REQUIRED = 'the following arguments are required: %s'
 
 
+class CommandException(Exception):
+    def __init__(self, *args, **kwargs):
+        super(CommandException, self).__init__(args[0])
+        self.cmd = kwargs['cmd']
+
+
 class BaseTestCase(base.BaseTestCase):
     VERSION = None
 
-    @classmethod
-    def openstack(cls, cmd, may_fail=False, use_json=False):
-        result = None
-        try:
-            to_exec = ['openstack'] + cmd.split()
-            if use_json:
-                to_exec += ['-f', 'json']
-            if cls.VERSION is not None:
-                to_exec += ['--os-placement-api-version', cls.VERSION]
+    def setUp(self):
+        super(BaseTestCase, self).setUp()
+        self.useFixture(capture.Logging())
+        self.placement = self.useFixture(placement.PlacementFixture())
 
-            output = subprocess.check_output(to_exec, stderr=subprocess.STDOUT)
-            result = (output or b'').decode('utf-8')
-        except subprocess.CalledProcessError as e:
-            msg = 'Command: "%s"\noutput: %s' % (' '.join(e.cmd), e.output)
-            e.cmd = msg
+        # Work around needing to reset the session's notion of where
+        # we are going.
+        def mock_get(obj, instance, owner):
+            return obj.factory(instance)
+
+        # NOTE(cdent): This is fragile, but is necessary to work around
+        # the rather complex start up optimizations that are done in osc_lib.
+        # If/when osc_lib changes this will at least fail fast.
+        self.useFixture(fixtures.MonkeyPatch(
+            'osc_lib.clientmanager.ClientCache.__get__',
+            mock_get))
+
+        # Reset log level on a set of packages. See comment on RESET_LOGGING
+        # assigment, above.
+        for name in RESET_LOGGING:
+            logging.getLogger(name).setLevel(logging.WARNING)
+
+    def openstack(self, cmd, may_fail=False, use_json=False):
+        to_exec = []
+        # Make all requests as a noauth admin user.
+        to_exec += [
+            '--os-url', self.placement.endpoint,
+            '--os-token', self.placement.token,
+        ]
+        if self.VERSION is not None:
+            to_exec += ['--os-placement-api-version', self.VERSION]
+        to_exec += cmd.split()
+        if use_json:
+            to_exec += ['-f', 'json']
+
+        # Context manager here instead of setUp because we only want
+        # output trapping around the run().
+        self.output = six.StringIO()
+        self.error = six.StringIO()
+        stdout_fix = fixtures.MonkeyPatch('sys.stdout', self.output)
+        stderr_fix = fixtures.MonkeyPatch('sys.stderr', self.error)
+        with stdout_fix, stderr_fix:
+            try:
+                os_shell = shell.OpenStackShell()
+                return_code = os_shell.run(to_exec)
+            # Catch SystemExit to trap some error responses, mostly from the
+            # argparse lib which has a tendency to exit for you instead of
+            # politely telling you it wants to.
+            except SystemExit as exc:
+                return_code = exc.code
+
+        if return_code:
+            msg = 'Command: "%s"\noutput: %s' % (' '.join(to_exec),
+                                                 self.error.getvalue())
             if not may_fail:
-                raise
+                raise CommandException(msg, cmd=' '.join(to_exec))
 
-        if use_json and result:
-            return json.loads(result)
+        output = self.output.getvalue() + self.error.getvalue()
+        if use_json and output:
+            return json.loads(output)
         else:
-            return result
+            return output
 
     def rand_name(self, name='', prefix=None):
         """Generate a random name that includes a random number
@@ -79,10 +146,9 @@ class BaseTestCase(base.BaseTestCase):
         try:
             func(*args, **kwargs)
             self.fail('Command does not fail as required (%s)' % signature)
-
-        except subprocess.CalledProcessError as e:
+        except CommandException as e:
             self.assertIn(
-                message, six.text_type(e.output),
+                message, six.text_type(e),
                 'Command "%s" fails with different message' % e.cmd)
 
     def resource_provider_create(self,
@@ -99,9 +165,9 @@ class BaseTestCase(base.BaseTestCase):
         def cleanup():
             try:
                 self.resource_provider_delete(res['uuid'])
-            except subprocess.CalledProcessError as exc:
+            except CommandException as exc:
                 # may have already been deleted by a test case
-                err_message = exc.output.decode('utf-8').lower()
+                err_message = six.text_type(exc).lower()
                 if 'no resource provider' not in err_message:
                     raise
         self.addCleanup(cleanup)
@@ -166,9 +232,9 @@ class BaseTestCase(base.BaseTestCase):
         def cleanup(uuid):
             try:
                 self.openstack('resource provider allocation delete ' + uuid)
-            except subprocess.CalledProcessError as exc:
+            except CommandException as exc:
                 # may have already been deleted by a test case
-                if 'not found' in exc.output.decode('utf-8').lower():
+                if 'not found' in six.text_type(exc).lower():
                     pass
         self.addCleanup(cleanup, consumer_uuid)
 
@@ -264,9 +330,9 @@ class BaseTestCase(base.BaseTestCase):
         def cleanup():
             try:
                 self.trait_delete(name)
-            except subprocess.CalledProcessError as exc:
+            except CommandException as exc:
                 # may have already been deleted by a test case
-                err_message = exc.output.decode('utf-8').lower()
+                err_message = six.text_type(exc).lower()
                 if 'http 404' not in err_message:
                     raise
         self.addCleanup(cleanup)

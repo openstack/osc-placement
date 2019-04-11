@@ -11,8 +11,9 @@
 # under the License.
 
 import operator
-import subprocess
 import uuid
+
+import six
 
 from osc_placement.tests.functional import base
 
@@ -46,12 +47,12 @@ class TestUsage(base.BaseTestCase):
     def test_usage_not_found(self):
         rp_uuid = str(uuid.uuid4())
 
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_provider_show_usage,
                                 rp_uuid)
         self.assertIn(
             'No resource provider with uuid {} found'.format(rp_uuid),
-            exc.output.decode('utf-8')
+            six.text_type(exc)
         )
 
     def test_usage_empty(self):

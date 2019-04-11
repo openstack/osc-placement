@@ -10,8 +10,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import subprocess
 import uuid
+
+import six
 
 from osc_placement.tests.functional import base
 
@@ -68,11 +69,11 @@ class TestAllocation(base.BaseTestCase):
     def test_allocation_create_empty(self):
         consumer_uuid = str(uuid.uuid4())
 
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_allocation_set,
                                 consumer_uuid, [])
         self.assertIn('At least one resource allocation must be specified',
-                      exc.output.decode('utf-8'))
+                      six.text_type(exc))
 
     def test_allocation_delete(self):
         consumer_uuid = str(uuid.uuid4())
@@ -91,9 +92,9 @@ class TestAllocation(base.BaseTestCase):
         consumer_uuid = str(uuid.uuid4())
 
         msg = "No allocations for consumer '{}'".format(consumer_uuid)
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_allocation_delete, consumer_uuid)
-        self.assertIn(msg, exc.output.decode('utf-8'))
+        self.assertIn(msg, six.text_type(exc))
 
 
 class TestAllocation18(base.BaseTestCase):

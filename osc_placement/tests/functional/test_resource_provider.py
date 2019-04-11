@@ -11,7 +11,6 @@
 # under the License.
 
 import operator
-import subprocess
 import uuid
 
 import six
@@ -43,9 +42,9 @@ class TestResourceProvider(base.BaseTestCase):
         rp_uuid = six.text_type(uuid.uuid4())
         msg = 'No resource provider with uuid ' + rp_uuid + ' found'
 
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_provider_delete, rp_uuid)
-        self.assertIn(msg, exc.output.decode('utf-8'))
+        self.assertIn(msg, six.text_type(exc))
 
     def test_resource_provider_set(self):
         orig_name = self.rand_name('test_rp_orig_name')
@@ -65,9 +64,9 @@ class TestResourceProvider(base.BaseTestCase):
         rp_uuid = six.text_type(uuid.uuid4())
         msg = 'No resource provider with uuid ' + rp_uuid + ' found'
 
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_provider_set, rp_uuid, 'test')
-        self.assertIn(msg, exc.output.decode('utf-8'))
+        self.assertIn(msg, six.text_type(exc))
 
     def test_resource_provider_show(self):
         created = self.resource_provider_create()
@@ -103,9 +102,9 @@ class TestResourceProvider(base.BaseTestCase):
         rp_uuid = six.text_type(uuid.uuid4())
         msg = 'No resource provider with uuid ' + rp_uuid + ' found'
 
-        exc = self.assertRaises(subprocess.CalledProcessError,
+        exc = self.assertRaises(base.CommandException,
                                 self.resource_provider_show, rp_uuid)
-        self.assertIn(msg, exc.output.decode('utf-8'))
+        self.assertIn(msg, six.text_type(exc))
 
     def test_resource_provider_list(self):
         rp1 = self.resource_provider_create()
@@ -238,12 +237,12 @@ class TestResourceProvider114(base.BaseTestCase):
         child = self.resource_provider_create(
             parent_provider_uuid=parent1['uuid'])
         exc = self.assertRaises(
-            subprocess.CalledProcessError,
+            base.CommandException,
             self.resource_provider_set,
             child['uuid'],
             name='mandatory_name_2',
             parent_provider_uuid=parent2['uuid'])
-        self.assertIn('HTTP 400', exc.output.decode('utf-8'))
+        self.assertIn('HTTP 400', six.text_type(exc))
 
     def test_resource_provider_list_in_tree(self):
         rp1 = self.resource_provider_create()
@@ -262,10 +261,10 @@ class TestResourceProvider114(base.BaseTestCase):
         parent = self.resource_provider_create()
         self.resource_provider_create(parent_provider_uuid=parent['uuid'])
         exc = self.assertRaises(
-            subprocess.CalledProcessError,
+            base.CommandException,
             self.resource_provider_delete,
             parent['uuid'])
-        self.assertIn('HTTP 409', exc.output.decode('utf-8'))
+        self.assertIn('HTTP 409', six.text_type(exc))
 
 
 class TestResourceProvider118(base.BaseTestCase):
