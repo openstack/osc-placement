@@ -86,6 +86,19 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
                  'This option requires at least '
                  '``--os-placement-api-version 1.17``.'
         )
+        parser.add_argument(
+            '--aggregate-uuid',
+            default=[],
+            action='append',
+            metavar='<aggregate_uuid>',
+            help='UUID of the resource provider aggregate of which the '
+                 'returned allocation candidates are a member. The returned '
+                 'allocation candidates must be associated with at least one '
+                 'of the aggregates identified by uuid. '
+                 'May be repeated.\n\n'
+                 'This param requires at least '
+                 '``--os-placement-api-version 1.21``.'
+        )
 
         return parser
 
@@ -113,6 +126,11 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
             # Fail if --required but not high enough microversion.
             self.check_version(version.ge('1.17'))
             params['required'] = ','.join(parsed_args.required)
+        if 'aggregate_uuid' in parsed_args and parsed_args.aggregate_uuid:
+            # Fail if --aggregate_uuid but not high enough microversion.
+            self.check_version(version.ge('1.21'))
+            params['member_of'] = 'in:' + ','.join(parsed_args.aggregate_uuid)
+
         resp = http.request('GET', BASE_URL, params=params).json()
 
         rp_resources = {}

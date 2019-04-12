@@ -155,3 +155,36 @@ class TestAllocationCandidate117(base.BaseTestCase):
         self.assertEqual(
             set(candidate_dict[rp1['uuid']]['traits'].split(',')),
             set(['STORAGE_DISK_SSD', 'HW_NIC_SRIOV']))
+
+    # Prior to version 1.21 use the --aggregate-uuid arg should
+    # be an errror.
+    def test_fail_if_aggregate_uuid_wrong_version(self):
+        self.assertCommandFailed(
+            'Operation or argument is not supported with version 1.17',
+            self.allocation_candidate_list,
+            resources=('MEMORY_MB=1024', 'DISK_GB=80'),
+            aggregate_uuids=[str(uuid.uuid4())])
+
+
+class TestAllocationCandidate121(base.BaseTestCase):
+    VERSION = '1.21'
+
+    def test_return_properly_for_aggregate_uuid_request(self):
+        rp1 = self.resource_provider_create()
+        rp2 = self.resource_provider_create()
+        self.resource_inventory_set(
+            rp1['uuid'], 'MEMORY_MB=8192', 'DISK_GB=512')
+        self.resource_inventory_set(
+            rp2['uuid'], 'MEMORY_MB=8192', 'DISK_GB=512')
+        agg = str(uuid.uuid4())
+
+        self.resource_provider_aggregate_set(
+            rp2['uuid'], agg, generation=1)
+        rps = self.allocation_candidate_list(
+            resources=('MEMORY_MB=1024',),
+            aggregate_uuids=[agg, str(uuid.uuid4())])
+
+        candidate_dict = {rp['resource provider']: rp for rp in rps}
+        self.assertEqual(1, len(candidate_dict))
+        self.assertIn(rp2['uuid'], candidate_dict)
+        self.assertNotIn(rp1['uuid'], candidate_dict)

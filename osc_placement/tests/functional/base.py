@@ -288,11 +288,15 @@ class BaseTestCase(base.BaseTestCase):
         cmd = 'resource provider trait delete %s ' % uuid
         self.openstack(cmd)
 
-    def allocation_candidate_list(self, resources, required=None, limit=None):
+    def allocation_candidate_list(self, resources, required=None, limit=None,
+                                  aggregate_uuids=None):
         cmd = 'allocation candidate list ' + ' '.join(
             '--resource %s' % resource for resource in resources)
         if required is not None:
             cmd += ''.join([' --required %s' % t for t in required])
         if limit is not None:
             cmd += ' --limit %d' % limit
+        if aggregate_uuids:
+            cmd += ' ' + ' '.join(
+                   '--aggregate-uuid %s' % a for a in aggregate_uuids)
         return self.openstack(cmd, use_json=True)
