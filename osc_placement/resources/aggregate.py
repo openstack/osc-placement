@@ -62,7 +62,7 @@ class SetAggregate(command.Lister, version.CheckerMixin):
 
         return parser
 
-    @version.check(version.ge('1.1'))
+    @version.check(version.ge('1.1'), min_version='1.1')
     def take_action(self, parsed_args):
         http = self.app.client_manager.placement
 
@@ -106,7 +106,7 @@ class ListAggregate(command.Lister):
 
         return parser
 
-    @version.check(version.ge('1.1'))
+    @version.check(version.ge('1.1'), min_version='1.1')
     def take_action(self, parsed_args):
         http = self.app.client_manager.placement
 

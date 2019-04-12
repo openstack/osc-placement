@@ -78,17 +78,24 @@ def compare(ver, *predicates, **kwargs):
 
     kwargs['exc'] - boolean whether exception should be raised
     kwargs['op'] - (all, any) how predicates should be checked
+    kwargs['min_version'] - optional; used to aid in the error message that is
+        given, for example, to specify a minimum version to run a command.
 
     Examples:
         compare('1.1', version.gt('1.2'), exc=False) - False
         compare('1.1', version.eq('1.0'), version.eq('1.1'), op=any) - True
+        compare('1.0', version.ge('1.1'), min_version='1.1') - raise ValueError
 
     """
     exc = kwargs.get('exc', True)
     if not _compare(ver, *predicates, **kwargs):
         if exc:
-            raise ValueError(
-                'Operation or argument is not supported with version %s' % ver)
+            msg = ('Operation or argument is not supported with version %s' %
+                   ver)
+            if 'min_version' in kwargs:
+                msg = ('%s; requires at least version %s' %
+                       (msg, kwargs['min_version']))
+            raise ValueError(msg)
         return False
     return True
 
