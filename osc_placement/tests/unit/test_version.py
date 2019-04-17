@@ -32,23 +32,38 @@ class TestVersion(base.BaseTestCase):
         self.assertTrue(
             version._compare(
                 '0.3', version.eq('0.2'), version.eq('0.3'), op=any))
-        self.assertFalse(version._compare('1.0', version.gt('1.0')))
-        self.assertFalse(version._compare('1.0', version.ge('1.1')))
-        self.assertFalse(version._compare('1.0', version.eq('1.1')))
-        self.assertFalse(version._compare('1.0', version.le('0.9')))
-        self.assertFalse(version._compare('1.0', version.lt('0.9')))
+
+        # Test error message
+        msg = 'Operation or argument is not supported with version 1.0; '
+        self.assertEqual((msg + 'requires version greater than 1.0'),
+                         version._compare('1.0', version.gt('1.0')))
+        self.assertEqual((msg + 'requires at least version 1.1'),
+                         version._compare('1.0', version.ge('1.1')))
+        self.assertEqual((msg + 'requires version 1.1'),
+                         version._compare('1.0', version.eq('1.1')))
+        self.assertEqual((msg + 'requires at most version 0.9'),
+                         version._compare('1.0', version.le('0.9')))
+        self.assertEqual((msg + 'requires version less than 0.9'),
+                         version._compare('1.0', version.lt('0.9')))
+
         self.assertRaises(
             ValueError, version._compare, 'abc', version.le('1.1'))
         self.assertRaises(
             ValueError, version._compare, '1.0', version.le('.0'))
         self.assertRaises(
             ValueError, version._compare, '1', version.le('2'))
+
         ex = self.assertRaises(
-            ValueError, version.compare, '1.0', version.ge('1.1'),
-            min_version='1.1')
+            ValueError, version.compare, '1.0', version.ge('1.1'))
         self.assertEqual(
             'Operation or argument is not supported with version 1.0; '
             'requires at least version 1.1', six.text_type(ex))
+        ex = self.assertRaises(
+            ValueError, version.compare, '1.0',
+            version.eq('1.1'), version.eq('1.5'), op=any)
+        self.assertEqual(
+            'Operation or argument is not supported with version 1.0; '
+            'requires version 1.1, or requires version 1.5', six.text_type(ex))
 
     def test_compare_with_exc(self):
         self.assertTrue(version.compare('1.05', version.gt('1.4')))
