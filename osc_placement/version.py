@@ -40,37 +40,49 @@ SUPPORTED_VERSIONS = [
 ]
 
 
-def _op(func, b):
-    return lambda a: func(StrictVersion(a), StrictVersion(b))
+def _op(func, b, msg):
+    return lambda a: func(StrictVersion(a), StrictVersion(b)) or msg
 
 
 def lt(b):
-    return _op(operator.lt, b)
+    msg = 'requires version less than %s' % b
+    return _op(operator.lt, b, msg)
 
 
 def le(b):
-    return _op(operator.le, b)
+    msg = 'requires at most version %s' % b
+    return _op(operator.le, b, msg)
 
 
 def eq(b):
-    return _op(operator.eq, b)
+    msg = 'requires version %s' % b
+    return _op(operator.eq, b, msg)
 
 
 def ne(b):
-    return _op(operator.ne, b)
+    msg = 'can not use version %s' % b
+    return _op(operator.ne, b, msg)
 
 
 def ge(b):
-    return _op(operator.ge, b)
+    msg = 'requires at least version %s' % b
+    return _op(operator.ge, b, msg)
 
 
 def gt(b):
-    return _op(operator.gt, b)
+    msg = 'requires version greater than %s' % b
+    return _op(operator.gt, b, msg)
 
 
 def _compare(ver, *predicates, **kwargs):
     func = kwargs.get('op', all)
-    return func(p(ver) for p in predicates)
+    if func(p(ver) is True for p in predicates):
+        return True
+    # construct an error message if the requirement not satisfied
+    err_msg = 'Operation or argument is not supported with version %s; ' % ver
+    err_detail = [p(ver) for p in predicates if p(ver) is not True]
+    logic = ', and ' if func is all else ', or '
+    return err_msg + logic.join(err_detail)
 
 
 def compare(ver, *predicates, **kwargs):
@@ -78,24 +90,17 @@ def compare(ver, *predicates, **kwargs):
 
     kwargs['exc'] - boolean whether exception should be raised
     kwargs['op'] - (all, any) how predicates should be checked
-    kwargs['min_version'] - optional; used to aid in the error message that is
-        given, for example, to specify a minimum version to run a command.
 
     Examples:
         compare('1.1', version.gt('1.2'), exc=False) - False
         compare('1.1', version.eq('1.0'), version.eq('1.1'), op=any) - True
-        compare('1.0', version.ge('1.1'), min_version='1.1') - raise ValueError
 
     """
     exc = kwargs.get('exc', True)
-    if not _compare(ver, *predicates, **kwargs):
+    result = _compare(ver, *predicates, **kwargs)
+    if result is not True:
         if exc:
-            msg = ('Operation or argument is not supported with version %s' %
-                   ver)
-            if 'min_version' in kwargs:
-                msg = ('%s; requires at least version %s' %
-                       (msg, kwargs['min_version']))
-            raise ValueError(msg)
+            raise ValueError(result)
         return False
     return True
 
