@@ -27,17 +27,24 @@ class TestInventory(base.BaseTestCase):
 
     def test_inventory_show(self):
         rp_uuid = self.rp['uuid']
-        expected = {'min_unit': 1,
-                    'max_unit': 12,
-                    'reserved': 0,
-                    'step_size': 1,
-                    'total': 12,
-                    'allocation_ratio': 16.0}
+        updates = {
+            'min_unit': 1,
+            'max_unit': 12,
+            'reserved': 0,
+            'step_size': 1,
+            'total': 12,
+            'allocation_ratio': 16.0,
+        }
+        expected = updates.copy()
+        expected['used'] = 0
+        args = ['VCPU:%s=%s' % (k, v) for k, v in updates.items()]
 
-        args = ['VCPU:%s=%s' % (k, v) for k, v in expected.items()]
         self.resource_inventory_set(rp_uuid, *args)
-        self.assertEqual(expected,
-                         self.resource_inventory_show(rp_uuid, 'VCPU'))
+
+        self.assertEqual(
+            expected,
+            self.resource_inventory_show(rp_uuid, 'VCPU', include_used=True),
+        )
 
     def test_inventory_show_not_found(self):
         rp_uuid = self.rp['uuid']
@@ -47,6 +54,27 @@ class TestInventory(base.BaseTestCase):
                                 rp_uuid, 'VCPU')
         self.assertIn('No inventory of class VCPU for {}'.format(rp_uuid),
                       six.text_type(exc))
+
+    def test_inventory_list(self):
+        rp_uuid = self.rp['uuid']
+        updates = {
+            'min_unit': 1,
+            'max_unit': 12,
+            'reserved': 0,
+            'step_size': 1,
+            'total': 12,
+            'allocation_ratio': 16.0,
+        }
+        expected = [updates.copy()]
+        expected[0]['resource_class'] = 'VCPU'
+        expected[0]['used'] = 0
+        args = ['VCPU:%s=%s' % (k, v) for k, v in updates.items()]
+
+        self.resource_inventory_set(rp_uuid, *args)
+
+        self.assertEqual(
+            expected, self.resource_inventory_list(rp_uuid, include_used=True),
+        )
 
     def test_inventory_delete(self):
         rp_uuid = self.rp['uuid']

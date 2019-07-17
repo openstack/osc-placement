@@ -26,6 +26,7 @@ from osc_placement import version
 BASE_URL = '/resource_providers/{uuid}/inventories'
 PER_CLASS_URL = BASE_URL + '/{resource_class}'
 RP_BASE_URL = '/resource_providers'
+USAGES_BASE_URL = '/resource_providers/{uuid}/usages'
 INVENTORY_FIELDS = {
     'allocation_ratio': {
         'type': float,
@@ -372,7 +373,18 @@ class ShowInventory(command.ShowOne):
         url = PER_CLASS_URL.format(uuid=parsed_args.uuid,
                                    resource_class=parsed_args.resource_class)
         resource = http.request('GET', url).json()
-        return FIELDS, utils.get_dict_properties(resource, FIELDS)
+
+        # TODO(stephenfin): We should just include this information in the
+        # above API. Alternatively, we should add an API to retrieve usage for
+        # a single resource class
+        url = USAGES_BASE_URL.format(uuid=parsed_args.uuid)
+        resources = http.request('GET', url).json()['usages']
+
+        resource['used'] = resources[parsed_args.resource_class]
+
+        fields = FIELDS + ('used', )
+
+        return fields, utils.get_dict_properties(resource, fields)
 
 
 class ListInventory(command.Lister):
@@ -401,6 +413,14 @@ class ListInventory(command.Lister):
             for k, v in resources['inventories'].items()
         ]
 
-        fields = ('resource_class', ) + FIELDS
+        # TODO(stephenfin): We should just include this information in the
+        # above API
+        url = USAGES_BASE_URL.format(uuid=parsed_args.uuid)
+        resources = http.request('GET', url).json()['usages']
+
+        for inventory in inventories:
+            inventory['used'] = resources[inventory['resource_class']]
+
+        fields = ('resource_class', ) + FIELDS + ('used', )
         rows = (utils.get_dict_properties(i, fields) for i in inventories)
         return fields, rows

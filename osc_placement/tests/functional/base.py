@@ -289,15 +289,28 @@ class BaseTestCase(base.BaseTestCase):
         cmd = 'resource provider allocation delete ' + consumer_uuid
         return self.openstack(cmd)
 
-    def resource_inventory_show(self, uuid, resource_class):
-        cmd = 'resource provider inventory show {uuid} {rc}'.format(
-            uuid=uuid, rc=resource_class
+    def resource_inventory_show(
+        self, uuid, resource_class, *, include_used=False,
+    ):
+        resource = self.openstack(
+            f'resource provider inventory show {uuid} {resource_class}',
+            use_json=True,
         )
-        return self.openstack(cmd, use_json=True)
+        if not include_used:
+            del resource['used']
 
-    def resource_inventory_list(self, uuid):
-        return self.openstack('resource provider inventory list ' + uuid,
-                              use_json=True)
+        return resource
+
+    def resource_inventory_list(self, uuid, *, include_used=False):
+        resources = self.openstack(
+            f'resource provider inventory list {uuid}',
+            use_json=True,
+        )
+        if not include_used:
+            for resource in resources:
+                del resource['used']
+
+        return resources
 
     def resource_inventory_delete(self, uuid, resource_class=None):
         cmd = 'resource provider inventory delete {uuid}'.format(uuid=uuid)

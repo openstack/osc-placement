@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    The ``openstack resource provider inventory list`` and ``openstack resource
+    provider inventory show`` commands now include a ``used`` column providing
+    summary usage information for the specified resource(s).
