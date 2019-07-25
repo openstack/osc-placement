@@ -8,7 +8,7 @@ and microversion usage.
 
 The full Placement API reference can be found here:
 
-  https://developer.openstack.org/api-ref/placement/
+  https://docs.openstack.org/api-ref/placement/
 
 Microversion usage
 ------------------
