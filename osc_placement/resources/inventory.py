@@ -151,6 +151,13 @@ class SetInventory(command.Lister, version.CheckerMixin):
             help='If this option is specified, the inventories will be '
                  'amended instead of being fully replaced'
         )
+        parser.add_argument(
+            '--dry-run',
+            action='store_true',
+            help='If this option is specified, the inventories that would be '
+                 'set will be returned without actually setting any '
+                 'inventories'
+        )
 
         return parser
 
@@ -194,7 +201,10 @@ class SetInventory(command.Lister, version.CheckerMixin):
                 inventories[name][field] = value
 
             try:
-                resources = http.request('PUT', url, json=payload).json()
+                if not parsed_args.dry_run:
+                    resources = http.request('PUT', url, json=payload).json()
+                else:
+                    resources = payload
             except Exception as exp:
                 with excutils.save_and_reraise_exception() as err_ctx:
                     if parsed_args.aggregate:

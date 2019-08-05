@@ -268,6 +268,8 @@ class BaseTestCase(base.BaseTestCase):
             opts.append('--aggregate')
         if kwargs.get('amend'):
             opts.append('--amend')
+        if kwargs.get('dry_run'):
+            opts.append('--dry-run')
         fmt = 'resource provider inventory set {uuid} {resources} {opts}'
         cmd = fmt.format(
             uuid=uuid,

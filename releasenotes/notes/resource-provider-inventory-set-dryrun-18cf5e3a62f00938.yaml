@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    A new ``--dry-run`` option has been added to the ``resource provider
+    inventory set`` command which gives the ability to preview changes to
+    inventory without effecting them.

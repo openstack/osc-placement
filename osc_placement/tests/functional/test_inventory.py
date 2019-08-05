@@ -261,6 +261,39 @@ class TestSetInventory(base.BaseTestCase):
         check(inventories)
         self.assertEqual(5.0, inventories['VCPU']['allocation_ratio'])
 
+    def test_dry_run(self):
+        rp = self.resource_provider_create()
+        resp = self.resource_inventory_set(
+            rp['uuid'],
+            'VCPU=8',
+            'VCPU:max_unit=4',
+            'MEMORY_MB=1024',
+            'MEMORY_MB:reserved=256',
+            'DISK_GB=16',
+            'DISK_GB:allocation_ratio=1.5',
+            'DISK_GB:min_unit=2',
+            'DISK_GB:step_size=2',
+            dry_run=True)
+
+        def check(inventories):
+            self.assertEqual(8, inventories['VCPU']['total'])
+            self.assertEqual(4, inventories['VCPU']['max_unit'])
+            self.assertEqual(1024, inventories['MEMORY_MB']['total'])
+            self.assertEqual(256, inventories['MEMORY_MB']['reserved'])
+            self.assertEqual(16, inventories['DISK_GB']['total'])
+            self.assertEqual(2, inventories['DISK_GB']['min_unit'])
+            self.assertEqual(2, inventories['DISK_GB']['step_size'])
+            self.assertEqual(1.5, inventories['DISK_GB']['allocation_ratio'])
+
+        # We expect the return value from the set command to reflect the values
+        # passed to the command (a preview of what would be set if not for
+        # --dry-run)
+        check({r['resource_class']: r for r in resp})
+        # But we expect the return value from the list command to be empty
+        # since we used --dry-run and didn't actually effect any changes
+        resp = self.resource_inventory_list(rp['uuid'])
+        self.assertEqual([], resp)
+
 
 class TestInventory15(TestInventory):
     VERSION = '1.5'
@@ -274,6 +307,19 @@ class TestInventory15(TestInventory):
 
 class TestAggregateInventory(base.BaseTestCase):
     VERSION = '1.3'
+
+    def _test_dry_run(self, agg, rps, old_inventories, amend=False):
+        self.resource_inventory_set(
+            agg,
+            'VCPU:allocation_ratio=5.0',
+            'MEMORY_MB:allocation_ratio=6.0',
+            'DISK_GB:allocation_ratio=7.0',
+            aggregate=True, amend=amend, dry_run=True)
+        # Verify the inventories weren't changed (--dry-run)
+        for i, rp in enumerate(rps):
+            resp = self.resource_inventory_list(rp['uuid'])
+            self.assertDictEqual(old_inventories[i],
+                                 {r['resource_class']: r for r in resp})
 
     def _get_expected_inventories(self, old_inventories, resources):
         new_inventories = []
@@ -381,6 +427,8 @@ class TestAggregateInventory(base.BaseTestCase):
     def _test_with_aggregate(self, amend=False):
         # Set up some existing inventories with two resource providers
         rps, agg, old_invs = self._setup_two_resource_providers_in_aggregate()
+        # Verify that --dry-run works properly
+        self._test_dry_run(agg, rps, old_invs, amend=amend)
         # If we're not amending inventory, set some defaults that placement
         # will set internally and return when we list inventories later
         if not amend:
