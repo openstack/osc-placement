@@ -101,9 +101,10 @@ class SetInventory(command.Lister, version.CheckerMixin):
 
     """Replaces the set of inventory records for the resource provider.
 
-    Note that this is a full replacement of the existing inventory. If you
-    want to retain the existing inventory and add a new resource class
-    inventory, you must specify all resource class inventory, old and new.
+    Note that by default this is a full replacement of the existing inventory.
+    If you want to retain the existing inventory and add a new resource class
+    inventory, you must specify all resource class inventory, old and new, or
+    specify the --amend option.
 
     If a specific inventory field is not specified for a given resource class,
     it is assumed to be the total, i.e. --resource VCPU=16 is equivalent to
@@ -144,6 +145,12 @@ class SetInventory(command.Lister, version.CheckerMixin):
                  'be set. This option requires at least '
                  '``--os-placement-api-version 1.3``'
         )
+        parser.add_argument(
+            '--amend',
+            action='store_true',
+            help='If this option is specified, the inventories will be '
+                 'amended instead of being fully replaced'
+        )
 
         return parser
 
@@ -169,8 +176,17 @@ class SetInventory(command.Lister, version.CheckerMixin):
         for rp in rps:
             inventories = defaultdict(dict)
             url = BASE_URL.format(uuid=rp['uuid'])
-            payload = {'inventories': inventories,
-                       'resource_provider_generation': rp['generation']}
+            if parsed_args.amend:
+                # Get existing inventories
+                # TODO(melwitt): Do something to handle the possibility of the
+                # GET failing here (example: resource provider deleted from
+                # underneath us).
+                payload = http.request('GET', url).json()
+                inventories.update(payload['inventories'])
+                payload['inventories'] = inventories
+            else:
+                payload = {'inventories': inventories,
+                           'resource_provider_generation': rp['generation']}
 
             # Apply resource values to inventories
             for r in parsed_args.resource:

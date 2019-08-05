@@ -266,6 +266,8 @@ class BaseTestCase(base.BaseTestCase):
         opts = []
         if kwargs.get('aggregate'):
             opts.append('--aggregate')
+        if kwargs.get('amend'):
+            opts.append('--amend')
         fmt = 'resource provider inventory set {uuid} {resources} {opts}'
         cmd = fmt.format(
             uuid=uuid,

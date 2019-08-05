@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    A new ``--amend`` option has been added to the ``resource provider
+    inventory set`` command which can update resource provider inventory
+    without requiring the user to pass a full replacement for inventory.

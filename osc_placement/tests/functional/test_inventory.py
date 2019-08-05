@@ -215,6 +215,52 @@ class TestSetInventory(base.BaseTestCase):
             self.resource_inventory_set,
             agg, 'MEMORY_MB=16', aggregate=True)
 
+    def test_amend_multiple_classes(self):
+        # Tests that amending previously nonexistent resource class inventories
+        # results in creation of inventory for them
+        # Create a resource provider with no inventory
+        rp = self.resource_provider_create()
+        resp = self.resource_inventory_set(
+            rp['uuid'],
+            'VCPU=8',
+            'VCPU:max_unit=4',
+            'MEMORY_MB=1024',
+            'MEMORY_MB:reserved=256',
+            'DISK_GB=16',
+            'DISK_GB:allocation_ratio=1.5',
+            'DISK_GB:min_unit=2',
+            'DISK_GB:step_size=2',
+            amend=True)
+
+        def check(inventories):
+            self.assertEqual(8, inventories['VCPU']['total'])
+            self.assertEqual(4, inventories['VCPU']['max_unit'])
+            self.assertEqual(1024, inventories['MEMORY_MB']['total'])
+            self.assertEqual(256, inventories['MEMORY_MB']['reserved'])
+            self.assertEqual(16, inventories['DISK_GB']['total'])
+            self.assertEqual(1.5, inventories['DISK_GB']['allocation_ratio'])
+            self.assertEqual(2, inventories['DISK_GB']['min_unit'])
+            self.assertEqual(2, inventories['DISK_GB']['step_size'])
+
+        inventories = {r['resource_class']: r for r in resp}
+        check(inventories)
+        resp = self.resource_inventory_list(rp['uuid'])
+        inventories = {r['resource_class']: r for r in resp}
+        check(inventories)
+
+        # Test amending of one resource class inventory
+        resp = self.resource_inventory_set(
+            rp['uuid'],
+            'VCPU:allocation_ratio=5.0',
+            amend=True)
+        inventories = {r['resource_class']: r for r in resp}
+        check(inventories)
+        self.assertEqual(5.0, inventories['VCPU']['allocation_ratio'])
+        resp = self.resource_inventory_list(rp['uuid'])
+        inventories = {r['resource_class']: r for r in resp}
+        check(inventories)
+        self.assertEqual(5.0, inventories['VCPU']['allocation_ratio'])
+
 
 class TestInventory15(TestInventory):
     VERSION = '1.5'
@@ -249,6 +295,7 @@ class TestAggregateInventory(base.BaseTestCase):
 
     def _setup_two_resource_providers_in_aggregate(self):
         rps = []
+        invs = []
         inventory2 = ['VCPU=8',
                       'VCPU:max_unit=4',
                       'VCPU:allocation_ratio=16.0',
@@ -269,11 +316,12 @@ class TestAggregateInventory(base.BaseTestCase):
             # Verify the resource_provider column is not present without
             # --aggregate
             self.assertNotIn('resource_provider', resp)
+            invs.append({r['resource_class']: r for r in resp})
         # Put both resource providers in the same aggregate
         agg = str(uuid.uuid4())
         for rp in rps:
             self.resource_provider_aggregate_set(rp['uuid'], agg)
-        return rps, agg
+        return rps, agg, invs
 
     def test_fail_if_no_rps_in_aggregate(self):
         nonexistent_agg = str(uuid.uuid4())
@@ -287,7 +335,7 @@ class TestAggregateInventory(base.BaseTestCase):
 
     def test_with_aggregate_one_fails(self):
         # Set up some existing inventories with two resource providers
-        rps, agg = self._setup_two_resource_providers_in_aggregate()
+        rps, agg, _invs = self._setup_two_resource_providers_in_aggregate()
         # Set a custom resource class inventory on the first resource provider
         self.resource_class_create('CUSTOM_FOO')
         rp1_uuid = rps[0]['uuid']
@@ -330,39 +378,37 @@ class TestAggregateInventory(base.BaseTestCase):
         self.assertDictEqual({r['resource_class']: r for r in rp1_inv},
                              {r['resource_class']: r for r in resp})
 
-    def test_with_aggregate(self):
+    def _test_with_aggregate(self, amend=False):
         # Set up some existing inventories with two resource providers
-        rps, agg = self._setup_two_resource_providers_in_aggregate()
-        # Now, go ahead and update the allocation ratios and verify
+        rps, agg, old_invs = self._setup_two_resource_providers_in_aggregate()
+        # If we're not amending inventory, set some defaults that placement
+        # will set internally and return when we list inventories later
+        if not amend:
+            old_invs = []
+            defaults = {'max_unit': 2147483647,
+                        'min_unit': 1,
+                        'reserved': 0,
+                        'step_size': 1}
+            default_inventory = {'VCPU': copy.deepcopy(defaults)}
+            for rp in rps:
+                old_invs.append(default_inventory)
+        # Now, go ahead and update an allocation ratio and verify
         new_resources = ['VCPU:allocation_ratio=5.0',
-                         'VCPU:total=8',
-                         'MEMORY_MB:allocation_ratio=6.0',
-                         'MEMORY_MB:total=1024',
-                         'DISK_GB:allocation_ratio=7.0',
-                         'DISK_GB:total=16']
-        resp = self.resource_inventory_set(agg, *new_resources, aggregate=True)
+                         'VCPU:total=8']
+        resp = self.resource_inventory_set(agg, *new_resources, aggregate=True,
+                                           amend=amend)
         # Verify the resource_provider column is present with --aggregate
         for rp in resp:
             self.assertIn('resource_provider', rp)
-        # Placement will default the following internally
-        placement_defaults = ['VCPU:max_unit=2147483647',
-                              'VCPU:min_unit=1',
-                              'VCPU:reserved=0',
-                              'VCPU:step_size=1',
-                              'MEMORY_MB:max_unit=2147483647',
-                              'MEMORY_MB:min_unit=1',
-                              'MEMORY_MB:reserved=0',
-                              'MEMORY_MB:step_size=1',
-                              'DISK_GB:max_unit=2147483647',
-                              'DISK_GB:min_unit=1',
-                              'DISK_GB:reserved=0',
-                              'DISK_GB:step_size=1']
-        new_inventories = self._get_expected_inventories(
-            # Since inventories are expected to be fully replaced,
-            # use empty dicts for old inventories
-            [{}, {}],
-            new_resources + placement_defaults)
+        new_inventories = self._get_expected_inventories(old_invs,
+                                                         new_resources)
         for i in range(2):
             resp = self.resource_inventory_list(rps[i]['uuid'])
             self.assertDictEqual(new_inventories[i],
                                  {r['resource_class']: r for r in resp})
+
+    def test_with_aggregate(self):
+        self._test_with_aggregate()
+
+    def test_amend_with_aggregate(self):
+        self._test_with_aggregate(amend=True)
