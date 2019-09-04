@@ -10,7 +10,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from collections import defaultdict
+import collections
 import itertools
 
 from osc_lib.command import command
@@ -181,7 +181,7 @@ class SetInventory(command.Lister, version.CheckerMixin):
         resources_list = []
         ret = 0
         for rp in rps:
-            inventories = defaultdict(dict)
+            inventories = collections.defaultdict(dict)
             url = BASE_URL.format(uuid=rp['uuid'])
             if parsed_args.amend:
                 # Get existing inventories

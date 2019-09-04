@@ -10,7 +10,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from collections import defaultdict
+import collections
 import copy
 import uuid
 
@@ -324,7 +324,7 @@ class TestAggregateInventory(base.BaseTestCase):
     def _get_expected_inventories(self, old_inventories, resources):
         new_inventories = []
         for old_inventory in old_inventories:
-            new_inventory = defaultdict(dict)
+            new_inventory = collections.defaultdict(dict)
             new_inventory.update(copy.deepcopy(old_inventory))
             for resource in resources:
                 rc, keyval = resource.split(':')
@@ -401,10 +401,11 @@ class TestAggregateInventory(base.BaseTestCase):
         self.assertIn('Failed to set inventory for 1 of 2 resource providers.',
                       six.text_type(exc))
         output = self.output.getvalue() + self.error.getvalue()
-        err_txt = ("update conflict: Inventory for 'CUSTOM_FOO' on resource "
-                   "provider '%s' in use. (HTTP 409)." % rp1_uuid)
-        self.assertIn('Failed to set inventory for resource provider %s: %s' %
-                      (rp1_uuid, err_txt), output)
+        self.assertIn('Failed to set inventory for resource provider %s:' %
+                      rp1_uuid, output)
+        err_txt = ("Inventory for 'CUSTOM_FOO' on resource provider '%s' in "
+                   "use." % rp1_uuid)
+        self.assertIn(err_txt, output)
         # Placement will default the following internally
         placement_defaults = ['VCPU:max_unit=2147483647',
                               'VCPU:min_unit=1',
@@ -450,8 +451,8 @@ class TestAggregateInventory(base.BaseTestCase):
             self.assertIn('resource_provider', rp)
         new_inventories = self._get_expected_inventories(old_invs,
                                                          new_resources)
-        for i in range(2):
-            resp = self.resource_inventory_list(rps[i]['uuid'])
+        for i, rp in enumerate(rps):
+            resp = self.resource_inventory_list(rp['uuid'])
             self.assertDictEqual(new_inventories[i],
                                  {r['resource_class']: r for r in resp})
 
