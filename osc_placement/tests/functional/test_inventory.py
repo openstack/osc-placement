@@ -337,12 +337,36 @@ class TestAggregateInventory(base.BaseTestCase):
     VERSION = '1.3'
 
     def _test_dry_run(self, agg, rps, old_inventories, amend=False):
-        self.resource_inventory_set(
-            agg,
-            'VCPU:allocation_ratio=5.0',
-            'MEMORY_MB:allocation_ratio=6.0',
-            'DISK_GB:allocation_ratio=7.0',
-            aggregate=True, amend=amend, dry_run=True)
+        new_resources = ['VCPU:allocation_ratio=5.0',
+                         'MEMORY_MB:allocation_ratio=6.0',
+                         'DISK_GB:allocation_ratio=7.0']
+        resp = self.resource_inventory_set(
+            agg, *new_resources, aggregate=True, amend=amend, dry_run=True)
+        # Use empty dict to get expected values for full replacement
+        inventories = old_inventories if amend else [{}] * len(old_inventories)
+        # A list of dict keyed by resource class of dict of inventories
+        # Each list element corresponds to one resource provider
+        new_inventories = self._get_expected_inventories(
+            inventories, new_resources)
+        # To compare with actual result, reformat new_inventories to
+        # a dict, keyed by resource provider uuid, of dict of inventories
+        # keyed by resource class
+        expected = {}
+        for rp, inventory in zip(rps, new_inventories):
+            for rc, inv in inventory.items():
+                inv['resource_provider'] = rp['uuid']
+                # For full replacement (not amend) case these values should
+                # be set to empty string.
+                for key in ('max_unit', 'min_unit', 'reserved', 'step_size',
+                            'total', 'reserved', 'step_size'):
+                    if key not in inv:
+                        inv[key] = ''
+            expected[rp['uuid']] = inventory
+        # Reformat raw response (list of inventories) as well
+        resp_dict = collections.defaultdict(dict)
+        for row in resp:
+            resp_dict[row['resource_provider']][row['resource_class']] = row
+        self.assertEqual(expected, resp_dict)
         # Verify the inventories weren't changed (--dry-run)
         for i, rp in enumerate(rps):
             resp = self.resource_inventory_list(rp['uuid'])
