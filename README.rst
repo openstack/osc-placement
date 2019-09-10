@@ -14,5 +14,5 @@ to use the REST API directly, CLI is provided only for convenience of users.
 * Free software: Apache license
 * Documentation: https://docs.openstack.org/osc-placement/latest/index.html
 * Source: https://opendev.org/openstack/osc-placement
-* Bugs: https://bugs.launchpad.net/placement-osc-plugin
+* Bugs: https://storyboard.openstack.org/#!/project/openstack/osc-placement
 * Release notes: https://docs.openstack.org/releasenotes/osc-placement/
