@@ -48,3 +48,14 @@ autoprogram_cliff_ignored = [
 # openstackdocstheme options
 repository_name = 'openstack/osc-placement'
 use_storyboard = True
+
+# -- Options for LaTeX output -------------------------------------------------
+
+# Grouping the document tree into LaTeX files. List of tuples
+# (source start file, target name, title, author, documentclass
+# [howto/manual]).
+latex_use_xindy = False
+latex_documents = [
+    ('index', 'doc-osc-placement.tex', u'osc-placement Documentation',
+     u'OpenStack Foundation', 'manual'),
+]
