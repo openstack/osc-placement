@@ -84,7 +84,7 @@ class BaseTestCase(base.BaseTestCase):
         to_exec = []
         # Make all requests as a noauth admin user.
         to_exec += [
-            '--os-url', self.placement.endpoint,
+            '--os-endpoint', self.placement.endpoint,
             '--os-token', self.placement.token,
         ]
         if self.VERSION is not None:
