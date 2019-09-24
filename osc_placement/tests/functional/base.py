@@ -86,6 +86,7 @@ class BaseTestCase(base.BaseTestCase):
         to_exec += [
             '--os-endpoint', self.placement.endpoint,
             '--os-token', self.placement.token,
+            '--os-auth-type', 'admin_token',
         ]
         if self.VERSION is not None:
             to_exec += ['--os-placement-api-version', self.VERSION]
