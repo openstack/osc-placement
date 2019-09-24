@@ -2,9 +2,6 @@
 osc-placement
 =============
 
-.. image:: https://governance.openstack.org/tc/badges/osc-placement.svg
-       :target: https://governance.openstack.org/tc/reference/tags/index.html
-
 OpenStackClient plugin for the Placement service
 
 This is an OpenStackClient plugin, that provides CLI for the Placement service.
