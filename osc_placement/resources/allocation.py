@@ -139,6 +139,103 @@ class SetAllocation(command.Lister, version.CheckerMixin):
         return fields, rows
 
 
+class UnsetAllocation(command.Lister, version.CheckerMixin):
+    """Removes one or more sets of provider allocations for a consumer.
+
+    Note that omitting the ``--provider`` option is equivalent to removing
+    all allocations for the given consumer.
+
+    This command requires ``--os-placement-api-version 1.12`` or greater. Use
+    ``openstack resource provider allocation set`` for older versions.
+    """
+
+    def get_parser(self, prog_name):
+        parser = super(UnsetAllocation, self).get_parser(prog_name)
+
+        parser.add_argument(
+            'uuid',
+            metavar='<consumer_uuid>',
+            help='UUID of the consumer'
+        )
+        parser.add_argument(
+            '--provider',
+            metavar='provider_uuid',
+            action='append',
+            default=[],
+            help='UUID of a specific resource provider from which to remove '
+                 'allocations for the given consumer. This is useful when the '
+                 'consumer has allocations on more than one provider, for '
+                 'example after evacuating a server to another compute node '
+                 'and you want to cleanup allocations on the source compute '
+                 'node resource provider in order to delete it. It is '
+                 'strongly recommended to use '
+                 '``--os-placement-api-version 1.28`` or greater when using '
+                 'this option to ensure the other allocation information is '
+                 'retained. Specify multiple times to remove allocations '
+                 'against multiple resource providers. Omit this option to '
+                 'remove all allocations for the consumer.'
+        )
+        # TODO(mriedem): Add a --resource-class option which can be used with
+        # or without --provider, e.g.:
+        # 1. allocation unset --provider P --resource-class VGPU = remove
+        #    VGPU allocation from provider P for this consumer.
+        # 2. allocation unset --resource-class VGPU = remove VGPU allocations
+        #    from all providers for this consumer.
+        # Make sure to update the note about omitting --provider in the
+        # command description above (due to example 2).
+        return parser
+
+    # NOTE(mriedem): We require >= 1.12 because PUT requires project_id/user_id
+    # since 1.8 but GET does not return project_id/user_id until 1.12 and we
+    # do not want to add --project-id and --user-id options to this command
+    # like in the set command. If someone needs to use an older microversion or
+    # change the user/project they can use the set command.
+    @version.check(version.ge('1.12'))
+    def take_action(self, parsed_args):
+        http = self.app.client_manager.placement
+        url = BASE_URL + '/' + parsed_args.uuid
+
+        # Get the current allocations.
+        payload = http.request('GET', url).json()
+
+        if parsed_args.provider:
+            old_allocations = payload['allocations']
+            # Remove the given provider from the allocations if it exists.
+            # Do not error out if the consumer does not have allocations
+            # against the provider in case we lost a race since the allocations
+            # are in the state the user wants them in anyway.
+            allocations = {
+                rp_uuid: {'resources': alloc['resources']}
+                for rp_uuid, alloc in old_allocations.items()
+                if rp_uuid not in parsed_args.provider}
+        else:
+            # No --provider(s) specified so remove allocations from all
+            # providers.
+            allocations = {}
+
+        supports_consumer_generation = self.compare_version(version.ge('1.28'))
+        # 1.28+ allows PUTing an empty allocations dict as long as a
+        # consumer_generation is specified.
+        if allocations or (not allocations and supports_consumer_generation):
+            payload['allocations'] = allocations
+            http.request('PUT', url, json=payload)
+        else:
+            # The user must have removed all of the allocations using the
+            # --no-provider option so just DELETE the allocations since we
+            # cannot PUT with an empty allocations dict before 1.28.
+            http.request('DELETE', url)
+
+        resp = http.request('GET', url).json()
+        per_provider = resp['allocations'].items()
+
+        fields = ('resource_provider', 'generation', 'resources',
+                  'project_id', 'user_id')
+        allocs = [dict(project_id=resp['project_id'], user_id=resp['user_id'],
+                       resource_provider=k, **v) for k, v in per_provider]
+        rows = (utils.get_dict_properties(a, fields) for a in allocs)
+        return fields, rows
+
+
 class ShowAllocation(command.Lister, version.CheckerMixin):
     """Show resource allocations for a given consumer.
 

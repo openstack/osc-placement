@@ -243,6 +243,33 @@ class BaseTestCase(base.BaseTestCase):
 
         return result
 
+    def resource_allocation_unset(self, consumer_uuid, provider=None,
+                                  use_json=True):
+        if provider:
+            # --provider can be specified multiple times so if we only get
+            # a single string value convert to a list.
+            if isinstance(provider, six.string_types):
+                provider = [provider]
+            cmd = 'resource provider allocation unset %s %s' % (
+                ' '.join('--provider %s' %
+                         rp_uuid for rp_uuid in provider),
+                consumer_uuid
+            )
+        else:
+            cmd = 'resource provider allocation unset %s' % consumer_uuid
+        result = self.openstack(cmd, use_json=use_json)
+
+        def cleanup(uuid):
+            try:
+                self.openstack('resource provider allocation delete ' + uuid)
+            except CommandException as exc:
+                # may have already been deleted by a test case
+                if 'not found' in six.text_type(exc).lower():
+                    pass
+        self.addCleanup(cleanup, consumer_uuid)
+
+        return result
+
     def resource_allocation_delete(self, consumer_uuid):
         cmd = 'resource provider allocation delete ' + consumer_uuid
         return self.openstack(cmd)

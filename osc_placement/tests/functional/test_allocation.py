@@ -165,3 +165,77 @@ class TestAllocation112(base.BaseTestCase):
         ]
         self.assertEqual(expected, created_alloc)
         self.assertEqual(expected, retrieved_alloc)
+
+
+class TestAllocationUnsetOldVersion(base.BaseTestCase):
+
+    def test_invalid_version(self):
+        """Negative test to ensure the unset command requires >= 1.12."""
+        consumer_uuid = str(uuid.uuid4())
+        self.assertCommandFailed('requires at least version 1.12',
+                                 self.resource_allocation_unset, consumer_uuid)
+
+
+class TestAllocationUnset112(base.BaseTestCase):
+    VERSION = '1.12'
+
+    def setUp(self):
+        super(TestAllocationUnset112, self).setUp()
+        # Create two providers with inventory.
+        self.rp1 = self.resource_provider_create()
+        self.inv_cpu1 = self.resource_inventory_set(
+            self.rp1['uuid'],
+            'VCPU=4',
+            'VCPU:max_unit=4',
+            'MEMORY_MB=1024',
+            'MEMORY_MB:max_unit=1024')
+        self.rp2 = self.resource_provider_create()
+        self.resource_inventory_set(self.rp2['uuid'], 'VGPU=1')
+        # Create allocations against both providers for the same consumer.
+        self.consumer_uuid = str(uuid.uuid4())
+        self.project_uuid = str(uuid.uuid4())
+        self.user_uuid = str(uuid.uuid4())
+        # TODO(mriedem): Restrict allocation set to 1.12 until it supports
+        # 1.28 and consumer generations.
+        test_version = self.VERSION
+        self.VERSION = '1.12'
+        try:
+            self.resource_allocation_set(
+                self.consumer_uuid,
+                ['rp={},VCPU=2'.format(self.rp1['uuid']),
+                 'rp={},MEMORY_MB=512'.format(self.rp1['uuid']),
+                 'rp={},VGPU=1'.format(self.rp2['uuid'])],
+                project_id=self.project_uuid, user_id=self.user_uuid)
+        finally:
+            self.VERSION = test_version
+
+    def test_allocation_unset_one_provider(self):
+        """Tests removing allocations for one specific provider."""
+        # Remove the allocation for rp1.
+        updated_allocs = self.resource_allocation_unset(
+            self.consumer_uuid, provider=self.rp1['uuid'])
+        expected = [
+            {'resource_provider': self.rp2['uuid'],
+             'generation': 3,
+             'project_id': self.project_uuid,
+             'user_id': self.user_uuid,
+             'resources': {'VGPU': 1}}
+        ]
+        self.assertEqual(expected, updated_allocs)
+
+    def test_allocation_unset_remove_all_providers(self):
+        """Tests removing all allocations by omitting the --provider option."""
+        # For this test pass use_json=False to make sure we get nothing back
+        # in the output since there are no more allocations.
+        updated_allocs = self.resource_allocation_unset(
+            self.consumer_uuid, use_json=False)
+        self.assertEqual('', updated_allocs.strip())
+
+
+class TestAllocationUnset128(TestAllocationUnset112):
+    """Tests allocation unset command with --os-placement-api-version 1.28.
+
+    The 1.28 microversion adds the consumer_generation parameter to the
+    GET and PUT /allocations/{consumer_id} APIs.
+    """
+    VERSION = '1.28'

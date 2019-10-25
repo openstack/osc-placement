@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    A new ``openstack resource provider allocation unset`` command has been
+    added which allows removing resource provider(s) from the set of
+    allocations for the given consumer. This can be useful when a consumer has
+    allocations against more than one resource provider and
+    ``openstack resource provider allocation delete`` is undesirable as it
+    removes all allocations for the consumer. The new unset command requires
+    ``--os-placement-api-version 1.12`` or greater.
