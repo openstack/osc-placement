@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    The ``openstack resource provider allocation set`` command now supports
+    ``--os-placement-api-version 1.28`` where a consumer generation is
+    used which facilitates safe concurrent modification of an allocation.

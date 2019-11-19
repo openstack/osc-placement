@@ -60,6 +60,8 @@ class SetAllocation(command.Lister, version.CheckerMixin):
     contains the project_id and user_id of allocations which also
     appears in the CLI output.
 
+    Starting with ``--os-placement-api-version 1.28`` a consumer generation is
+    used which facilitates safe concurrent modification of an allocation.
     """
 
     def get_parser(self, prog_name):
@@ -99,6 +101,14 @@ class SetAllocation(command.Lister, version.CheckerMixin):
 
     def take_action(self, parsed_args):
         http = self.app.client_manager.placement
+        url = BASE_URL + '/' + parsed_args.uuid
+
+        # Determine if we need to honor consumer generations.
+        supports_consumer_generation = self.compare_version(version.ge('1.28'))
+        if supports_consumer_generation:
+            # Get the existing consumer generation via GET.
+            payload = http.request('GET', url).json()
+            consumer_generation = payload.get('consumer_generation')
 
         allocations = parse_allocations(parsed_args.allocation)
         if not allocations:
@@ -114,8 +124,11 @@ class SetAllocation(command.Lister, version.CheckerMixin):
                 {'resource_provider': {'uuid': rp}, 'resources': resources}
                 for rp, resources in allocations.items()]
 
-        url = BASE_URL + '/' + parsed_args.uuid
         payload = {'allocations': allocations}
+        # Include consumer_generation for 1.28+. Note that if this is the
+        # first set of allocations the consumer_generation will be None.
+        if supports_consumer_generation:
+            payload['consumer_generation'] = consumer_generation
         if self.compare_version(version.ge('1.8')):
             payload['project_id'] = parsed_args.project_id
             payload['user_id'] = parsed_args.user_id
