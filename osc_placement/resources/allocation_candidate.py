@@ -11,6 +11,7 @@
 # under the License.
 
 import argparse
+import collections
 
 from osc_lib.command import command
 from osc_lib import exceptions
@@ -19,6 +20,23 @@ from osc_placement import version
 
 
 BASE_URL = '/allocation_candidates'
+
+
+class GroupAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        group, = values
+        namespace._current_group = group
+        groups = namespace.__dict__.setdefault('groups', {})
+        groups[group] = collections.defaultdict(list)
+
+
+class AppendToGroup(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if getattr(namespace, '_current_group', None) is None:
+            groups = namespace.__dict__.setdefault('groups', {})
+            namespace._current_group = ''
+            groups[''] = collections.defaultdict(list)
+        namespace.groups[namespace._current_group][self.dest].append(values)
 
 
 class ListAllocationCandidate(command.Lister, version.CheckerMixin):
@@ -60,8 +78,7 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
             '--resource',
             metavar='<resource_class>=<value>',
             dest='resources',
-            action='append',
-            default=[],
+            action=AppendToGroup,
             help='String indicating an amount of resource of a specified '
                  'class that providers in each allocation request must '
                  'collectively have the capacity and availability to serve. '
@@ -81,8 +98,7 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
         parser.add_argument(
             '--required',
             metavar='<required>',
-            action='append',
-            default=[],
+            action=AppendToGroup,
             help='A required trait. May be repeated. Allocation candidates '
                  'must collectively contain all of the required traits. '
                  'This option requires at least '
@@ -91,8 +107,7 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
         parser.add_argument(
             '--forbidden',
             metavar='<forbidden>',
-            action='append',
-            default=[],
+            action=AppendToGroup,
             help='A forbidden trait. May be repeated. Returned allocation '
                  'candidates must not contain any of the specified traits. '
                  'This option requires at least '
@@ -103,8 +118,7 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
         aggregate_group = parser.add_mutually_exclusive_group()
         aggregate_group.add_argument(
             "--member-of",
-            default=[],
-            action='append',
+            action=AppendToGroup,
             metavar='<member_of>',
             help='A list of comma-separated UUIDs of the resource provider '
                  'aggregates. The returned allocation candidates must be '
@@ -119,56 +133,101 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
         )
         aggregate_group.add_argument(
             '--aggregate-uuid',
-            default=[],
-            action='append',
+            action=AppendToGroup,
             metavar='<aggregate_uuid>',
             help=argparse.SUPPRESS
+        )
+        parser.add_argument(
+            '--group',
+            action=GroupAction,
+            metavar='<group>',
+            help='An integer to group granular requests. If specified, '
+                 'following given options of resources, required/forbidden '
+                 'traits, and aggregate are associated to that group and will '
+                 'be satisfied by the same resource provider in the response. '
+                 'Can be repeated to get candidates from multiple resource '
+                 'providers in the same resource provider tree. '
+                 'For example, ``--group 1 --resource VCPU=3 --required '
+                 'HW_CPU_X86_AVX --group 2 --resource VCPU=2 --required '
+                 'HW_CPU_X86_SSE`` will provide candidates where three VCPUs '
+                 'comes from a provider with ``HW_CPU_X86_AVX`` trait and '
+                 'two VCPUs from a provider with ``HW_CPU_X86_SSE`` trait. '
+                 'This option requires at least '
+                 '``--os-placement-api-version 1.25`` or greater, but to have '
+                 'placement server be aware of resource provider tree, use '
+                 '``--os-placement-api-version 1.29`` or greater.'
+        )
+        parser.add_argument(
+            '--group-policy',
+            choices=['none', 'isolate'],
+            default='none',
+            metavar='<group_policy>',
+            help='This indicates how the groups should interact when multiple '
+                 'groups are supplied. With group_policy=none (default), '
+                 'separate groups may or may not be satisfied by the same '
+                 'provider. With group_policy=isolate, numbered groups are '
+                 'guaranteed to be satisfied by different providers.'
         )
 
         return parser
 
     @version.check(version.ge('1.10'))
     def take_action(self, parsed_args):
-        if not parsed_args.resources:
+        http = self.app.client_manager.placement
+
+        params = {}
+        if 'groups' not in parsed_args:
             raise exceptions.CommandError(
                 'At least one --resource must be specified.')
 
-        for resource in parsed_args.resources:
-            if not len(resource.split('=')) == 2:
-                raise exceptions.CommandError(
-                    'Arguments to --resource must be of form '
-                    '<resource_class>=<value>')
-
-        http = self.app.client_manager.placement
-
-        params = {'resources': ','.join(
-            resource.replace('=', ':') for resource in parsed_args.resources)}
         if 'limit' in parsed_args and parsed_args.limit:
             # Fail if --limit but not high enough microversion.
             self.check_version(version.ge('1.16'))
             params['limit'] = int(parsed_args.limit)
-        if 'required' in parsed_args and parsed_args.required:
-            # Fail if --required but not high enough microversion.
-            self.check_version(version.ge('1.17'))
-            params['required'] = ','.join(parsed_args.required)
-        if 'forbidden' in parsed_args and parsed_args.forbidden:
-            self.check_version(version.ge('1.22'))
-            forbidden_traits = ','.join(
-                ['!' + f for f in parsed_args.forbidden])
-            if 'required' in params:
-                params['required'] += ',' + forbidden_traits
-            else:
-                params['required'] = forbidden_traits
-        if 'aggregate_uuid' in parsed_args and parsed_args.aggregate_uuid:
-            # Fail if --aggregate_uuid but not high enough microversion.
-            self.check_version(version.ge('1.21'))
-            self.deprecated_option_warning("--aggregate-uuid", "--member-of")
-            params['member_of'] = 'in:' + ','.join(parsed_args.aggregate_uuid)
-        if 'member_of' in parsed_args and parsed_args.member_of:
-            # Fail if --member-of but not high enough microversion.
-            self.check_version(version.ge('1.21'))
-            params['member_of'] = [
-                'in:' + aggs for aggs in parsed_args.member_of]
+
+        if any(parsed_args.groups):
+            self.check_version(version.ge('1.25'))
+            params['group_policy'] = parsed_args.group_policy
+
+        for suffix, group in parsed_args.groups.items():
+            def _get_key(name):
+                return name + suffix
+
+            if 'resources' not in group:
+                raise exceptions.CommandError(
+                    '--resources should be provided in group %s', suffix)
+            for resource in group['resources']:
+                if not len(resource.split('=')) == 2:
+                    raise exceptions.CommandError(
+                        'Arguments to --resource must be of form '
+                        '<resource_class>=<value>')
+
+            params[_get_key('resources')] = ','.join(
+                resource.replace('=', ':') for resource in group['resources'])
+            if 'required' in group and group['required']:
+                # Fail if --required but not high enough microversion.
+                self.check_version(version.ge('1.17'))
+                params[_get_key('required')] = ','.join(group['required'])
+            if 'forbidden' in group and group['forbidden']:
+                self.check_version(version.ge('1.22'))
+                forbidden_traits = ','.join(
+                    ['!' + f for f in group['forbidden']])
+                if 'required' in params:
+                    params[_get_key('required')] += ',' + forbidden_traits
+                else:
+                    params[_get_key('required')] = forbidden_traits
+            if 'aggregate_uuid' in group and group['aggregate_uuid']:
+                # Fail if --aggregate_uuid but not high enough microversion.
+                self.check_version(version.ge('1.21'))
+                self.deprecated_option_warning(
+                    "--aggregate-uuid", "--member-of")
+                params[_get_key('member_of')] = 'in:' + ','.join(
+                    group['aggregate_uuid'])
+            if 'member_of' in group and group['member_of']:
+                # Fail if --member-of but not high enough microversion.
+                self.check_version(version.ge('1.21'))
+                params[_get_key('member_of')] = [
+                    'in:' + aggs for aggs in group['member_of']]
 
         resp = http.request('GET', BASE_URL, params=params).json()
 

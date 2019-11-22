@@ -409,23 +409,44 @@ class BaseTestCase(base.BaseTestCase):
         cmd = 'resource provider trait delete %s ' % uuid
         self.openstack(cmd)
 
-    def allocation_candidate_list(self, resources, required=None,
+    def allocation_candidate_list(self, resources=None, required=None,
                                   forbidden=None, limit=None,
                                   aggregate_uuids=None, member_of=None,
                                   may_print_to_stderr=False):
-        cmd = 'allocation candidate list ' + ' '.join(
-            '--resource %s' % resource for resource in resources)
-        if required is not None:
-            cmd += ''.join([' --required %s' % t for t in required])
-        if forbidden:
-            cmd += ' ' + ' '.join('--forbidden %s' % f for f in forbidden)
+        cmd = 'allocation candidate list '
+        cmd += self._allocation_candidates_option(
+            resources, required, forbidden, aggregate_uuids, member_of)
         if limit is not None:
             cmd += ' --limit %d' % limit
-        if aggregate_uuids:
-            cmd += ' ' + ' '.join(
-                   '--aggregate-uuid %s' % a for a in aggregate_uuids)
-        if member_of:
-            cmd += ' ' + ' '.join(
-                ['--member-of %s' % m for m in member_of])
         return self.openstack(
             cmd, use_json=True, may_print_to_stderr=may_print_to_stderr)
+
+    def allocation_candidate_granular(self, groups, group_policy=None,
+                                      limit=None):
+        cmd = 'allocation candidate list '
+        for suffix, req_group in groups.items():
+            cmd += ' --group %s' % suffix
+            cmd += self._allocation_candidates_option(**req_group)
+            if limit is not None:
+                cmd += ' --limit %d' % limit
+            if group_policy is not None:
+                cmd += ' --group-policy %s' % group_policy
+        return self.openstack(cmd, use_json=True)
+
+    def _allocation_candidates_option(self, resources=None, required=None,
+                                      forbidden=None, aggregate_uuids=None,
+                                      member_of=None):
+        opt = ''
+        if resources:
+            opt += ' ' + ' '.join(
+                '--resource %s' % resource for resource in resources)
+        if required is not None:
+            opt += ''.join([' --required %s' % t for t in required])
+        if forbidden:
+            opt += ' ' + ' '.join('--forbidden %s' % f for f in forbidden)
+        if aggregate_uuids:
+            opt += ' ' + ' '.join(
+                '--aggregate-uuid %s' % a for a in aggregate_uuids)
+        if member_of:
+            opt += ' ' + ' '.join(['--member-of %s' % m for m in member_of])
+        return opt
