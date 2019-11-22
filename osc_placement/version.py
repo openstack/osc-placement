@@ -14,7 +14,10 @@ from distutils.version import StrictVersion
 import operator
 
 
-SUPPORTED_VERSIONS = [
+NEGOTIATE_VERSIONS = [
+    '1',  # Added for auto choice for appropriate version
+]
+SUPPORTED_MICROVERSIONS = [
     '1.0',
     '1.1',
     '1.2',
@@ -46,6 +49,12 @@ SUPPORTED_VERSIONS = [
     '1.28',  # Added for provider allocation (un)set (Ussuri)
     '1.29',
 ]
+SUPPORTED_VERSIONS = SUPPORTED_MICROVERSIONS + NEGOTIATE_VERSIONS
+# The max microversion lower than which are all supported by this client.
+# This is used to automatically pick up the microversion to use. Change this
+# when you add a microversion to the `_SUPPORTED_VERSIONS` without a gap.
+# TestVersion.test_max_version_consistency checks its consistency.
+MAX_VERSION_NO_GAP = '1.29'
 
 
 def _op(func, b, msg):

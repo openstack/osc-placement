@@ -38,13 +38,13 @@ def make_client(instance):
                  'interface': instance.interface}
 
     LOG.debug('Instantiating placement client: %s', client_class)
-    # TODO(rpodolyaka): add version negotiation
     return client_class(session=instance.session,
                         ks_filter=ks_filter,
                         api_version=instance._api_version[API_NAME])
 
 
 def build_option_parser(parser):
+    # ToDo(tetsuro): Make default a negotiate version
     default = version.SUPPORTED_VERSIONS[0]
     parser.add_argument(
         '--os-placement-api-version',
