@@ -52,7 +52,7 @@ class CommandException(Exception):
 
 
 class BaseTestCase(base.BaseTestCase):
-    VERSION = None
+    VERSION = '1.0'
 
     def setUp(self):
         super(BaseTestCase, self).setUp()

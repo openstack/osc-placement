@@ -44,8 +44,7 @@ def make_client(instance):
 
 
 def build_option_parser(parser):
-    # ToDo(tetsuro): Make default a negotiate version
-    default = version.SUPPORTED_VERSIONS[0]
+    default = version.NEGOTIATE_VERSIONS[0]
     parser.add_argument(
         '--os-placement-api-version',
         metavar='<placement-api-version>',
