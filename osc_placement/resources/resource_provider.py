@@ -10,10 +10,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import argparse
+
 from osc_lib.command import command
 from osc_lib import utils
 
-from osc_placement.resources import common
 from osc_placement import version
 
 
@@ -87,19 +88,6 @@ class ListResourceProvider(command.Lister, version.CheckerMixin):
             help='Name of the resource provider'
         )
         parser.add_argument(
-            '--aggregate-uuid',
-            default=[],
-            action='append',
-            metavar='<aggregate_uuid>',
-            help='UUID of the resource provider aggregate of which the '
-                 'listed resource providers are a member. The returned '
-                 'resource providers must be associated with at least one of '
-                 'the aggregates identified by uuid. '
-                 'May be repeated.\n\n'
-                 'This param requires at least '
-                 '``--os-placement-api-version 1.3``.'
-        )
-        parser.add_argument(
             '--resource',
             metavar='<resource_class>=<value>',
             default=[],
@@ -138,6 +126,32 @@ class ListResourceProvider(command.Lister, version.CheckerMixin):
                  'This option requires at least '
                  '``--os-placement-api-version 1.22``.'
         )
+        # NOTE(tetsuro): --aggregate-uuid is deprecated in Jan 2020 in 1.x
+        # release. Do not remove before Jan 2021 and a 2.x release.
+        aggregate_group = parser.add_mutually_exclusive_group()
+        aggregate_group.add_argument(
+            "--member-of",
+            default=[],
+            action='append',
+            metavar='<member_of>',
+            help='A list of comma-separated UUIDs of the resource provider '
+                 'aggregates. The returned resource providers must be '
+                 'associated with at least one of the aggregates identified '
+                 'by uuid. This param requires at least '
+                 '``--os-placement-api-version 1.3`` and can be repeated to '
+                 'add(restrict) the condition with '
+                 '``--os-placement-api-version 1.24`` or greater. '
+                 'For example, to get candidates either in agg1 or in agg2 '
+                 'and definitely in agg3, specify:\n\n'
+                 '``--member_of <agg1>,<agg2> --member_of <agg3>``'
+        )
+        aggregate_group.add_argument(
+            '--aggregate-uuid',
+            default=[],
+            action='append',
+            metavar='<aggregate_uuid>',
+            help=argparse.SUPPRESS
+        )
 
         return parser
 
@@ -151,6 +165,7 @@ class ListResourceProvider(command.Lister, version.CheckerMixin):
             filters['uuid'] = parsed_args.uuid
         if parsed_args.aggregate_uuid:
             self.check_version(version.ge('1.3'))
+            self.deprecated_option_warning("--aggregate-uuid", "--member-of")
             filters['member_of'] = 'in:' + ','.join(parsed_args.aggregate_uuid)
         if parsed_args.resource:
             self.check_version(version.ge('1.4'))
@@ -171,9 +186,14 @@ class ListResourceProvider(command.Lister, version.CheckerMixin):
                 filters['required'] += ',' + forbidden_traits
             else:
                 filters['required'] = forbidden_traits
+        if 'member_of' in parsed_args and parsed_args.member_of:
+            # Fail if --member-of but not high enough microversion.
+            self.check_version(version.ge('1.3'))
+            filters['member_of'] = [
+                'in:' + aggs for aggs in parsed_args.member_of]
 
-        url = common.url_with_filters(BASE_URL, filters)
-        resources = http.request('GET', url).json()['resource_providers']
+        resources = http.request(
+            'GET', BASE_URL, params=filters).json()['resource_providers']
 
         fields = ('uuid', 'name', 'generation')
         if self.compare_version(version.ge('1.14')):

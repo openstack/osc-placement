@@ -1,0 +1,15 @@
+---
+features:
+  - |
+    The ``openstack allocation candidate list`` and the ``openstack resource
+    provider list`` command now supports ``--member-of`` option, which
+    accepts comma-separated UUIDs of the resource provider aggregates. If this
+    is specified, the returned resource providers must be associated with at
+    least one of the aggregates identified by uuid.
+    This option can be repeated to add(restrict) the condition with
+    ``--os-placement-api-version 1.24`` or greater.
+deprecations:
+  - |
+    The ``--aggregate-uuid`` option has been deprecated for the ``openstack
+    allocation candidate list`` and the ``openstack resource provider list``
+    commands. Please use ``--member-of`` option instead.

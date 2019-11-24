@@ -10,6 +10,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import argparse
+
 from osc_lib.command import command
 from osc_lib import exceptions
 
@@ -96,18 +98,31 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
                  'This option requires at least '
                  '``--os-placement-api-version 1.22``.'
         )
-        parser.add_argument(
+        # NOTE(tetsuro): --aggregate-uuid is deprecated in Jan 2020 in 1.x
+        # release. Do not remove before Jan 2021 and a 2.x release.
+        aggregate_group = parser.add_mutually_exclusive_group()
+        aggregate_group.add_argument(
+            "--member-of",
+            default=[],
+            action='append',
+            metavar='<member_of>',
+            help='A list of comma-separated UUIDs of the resource provider '
+                 'aggregates. The returned allocation candidates must be '
+                 'associated with at least one of the aggregates identified '
+                 'by uuid. This param requires at least '
+                 '``--os-placement-api-version 1.21`` and can be repeated to '
+                 'add(restrict) the condition with '
+                 '``--os-placement-api-version 1.24`` or greater. '
+                 'For example, to get candidates in either of agg1 or agg2 '
+                 'and definitely in agg3, specify:\n\n'
+                 '``--member_of <agg1>,<agg2> --member_of <agg3>``'
+        )
+        aggregate_group.add_argument(
             '--aggregate-uuid',
             default=[],
             action='append',
             metavar='<aggregate_uuid>',
-            help='UUID of the resource provider aggregate of which the '
-                 'returned allocation candidates are a member. The returned '
-                 'allocation candidates must be associated with at least one '
-                 'of the aggregates identified by uuid. '
-                 'May be repeated.\n\n'
-                 'This param requires at least '
-                 '``--os-placement-api-version 1.21``.'
+            help=argparse.SUPPRESS
         )
 
         return parser
@@ -147,7 +162,13 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
         if 'aggregate_uuid' in parsed_args and parsed_args.aggregate_uuid:
             # Fail if --aggregate_uuid but not high enough microversion.
             self.check_version(version.ge('1.21'))
+            self.deprecated_option_warning("--aggregate-uuid", "--member-of")
             params['member_of'] = 'in:' + ','.join(parsed_args.aggregate_uuid)
+        if 'member_of' in parsed_args and parsed_args.member_of:
+            # Fail if --member-of but not high enough microversion.
+            self.check_version(version.ge('1.21'))
+            params['member_of'] = [
+                'in:' + aggs for aggs in parsed_args.member_of]
 
         resp = http.request('GET', BASE_URL, params=params).json()
 
