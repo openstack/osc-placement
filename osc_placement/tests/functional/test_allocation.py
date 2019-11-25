@@ -54,17 +54,22 @@ class TestAllocation(base.BaseTestCase):
         self.assertEqual(expected, retrieved_alloc)
 
         # Test that specifying --project-id and --user-id before microversion
-        # 1.8 does not result in an error (they will be ignored). We have
-        # to specify use_json=False because there will be a warning in the
-        # output which can't be json-decoded.
-        output = self.resource_allocation_set(
+        # 1.8 does not result in an error but display a warning.
+        output, warning = self.resource_allocation_set(
             consumer_uuid,
             ['rp={},VCPU=2'.format(self.rp1['uuid']),
              'rp={},MEMORY_MB=512'.format(self.rp1['uuid'])],
-            project_id='fake-project', user_id='fake-user', use_json=False)
+            project_id='fake-project', user_id='fake-user',
+            may_print_to_stderr=True)
+        expected = [
+            {'resource_provider': self.rp1['uuid'],
+             'generation': 3,
+             'resources': {'VCPU': 2, 'MEMORY_MB': 512}}
+        ]
+        self.assertEqual(expected, output)
         self.assertIn(
             '--project-id and --user-id options do not affect allocation for '
-            '--os-placement-api-version less than 1.8', output)
+            '--os-placement-api-version less than 1.8', warning)
 
     def test_allocation_create_empty(self):
         consumer_uuid = str(uuid.uuid4())

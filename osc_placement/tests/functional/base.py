@@ -80,7 +80,8 @@ class BaseTestCase(base.BaseTestCase):
         for name in RESET_LOGGING:
             logging.getLogger(name).setLevel(logging.WARNING)
 
-    def openstack(self, cmd, may_fail=False, use_json=False):
+    def openstack(self, cmd, may_fail=False, use_json=False,
+                  may_print_to_stderr=False):
         to_exec = []
         # Make all requests as a noauth admin user.
         to_exec += [
@@ -110,17 +111,30 @@ class BaseTestCase(base.BaseTestCase):
             except SystemExit as exc:
                 return_code = exc.code
 
+        # We may have error/warning messages in stderr, so treat it
+        # separately from the stdout.
+        output = self.output.getvalue()
+        error = self.error.getvalue()
+
         if return_code:
-            msg = 'Command: "%s"\noutput: %s' % (' '.join(to_exec),
-                                                 self.error.getvalue())
+            msg = 'Command: "%s"\noutput: %s' % (' '.join(to_exec), error)
             if not may_fail:
                 raise CommandException(msg, cmd=' '.join(to_exec))
 
-        output = self.output.getvalue() + self.error.getvalue()
         if use_json and output:
-            return json.loads(output)
-        else:
-            return output
+            output = json.loads(output)
+
+        if may_print_to_stderr:
+            return output, error
+
+        if error:
+            msg = ('Test code error - The command did not fail but it '
+                   'has a warning message. Set the "may_print_to_stderr" '
+                   'argument to true to get and validate the message:\n'
+                   'Command: "%s"\nstderr: %s') % (
+                ' '.join(to_exec), error)
+            raise CommandException(msg, cmd=' '.join(to_exec))
+        return output
 
     def rand_name(self, name='', prefix=None):
         """Generate a random name that includes a random number
@@ -221,7 +235,7 @@ class BaseTestCase(base.BaseTestCase):
 
     def resource_allocation_set(self, consumer_uuid, allocations,
                                 project_id=None, user_id=None,
-                                use_json=True):
+                                use_json=True, may_print_to_stderr=False):
         cmd = 'resource provider allocation set {allocs} {uuid}'.format(
             uuid=consumer_uuid,
             allocs=' '.join('--allocation {}'.format(a) for a in allocations)
@@ -230,7 +244,8 @@ class BaseTestCase(base.BaseTestCase):
             cmd += ' --project-id %s' % project_id
         if user_id:
             cmd += ' --user-id %s' % user_id
-        result = self.openstack(cmd, use_json=use_json)
+        result = self.openstack(cmd, use_json=use_json,
+                                may_print_to_stderr=may_print_to_stderr)
 
         def cleanup(uuid):
             try:
