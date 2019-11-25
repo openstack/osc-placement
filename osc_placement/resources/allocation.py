@@ -155,8 +155,8 @@ class SetAllocation(command.Lister, version.CheckerMixin):
 class UnsetAllocation(command.Lister, version.CheckerMixin):
     """Removes one or more sets of provider allocations for a consumer.
 
-    Note that omitting the ``--provider`` option is equivalent to removing
-    all allocations for the given consumer.
+    Note that omitting both the ``--provider`` and the ``--resource-class``
+    option is equivalent to removing all allocations for the given consumer.
 
     This command requires ``--os-placement-api-version 1.12`` or greater. Use
     ``openstack resource provider allocation set`` for older versions.
@@ -168,7 +168,10 @@ class UnsetAllocation(command.Lister, version.CheckerMixin):
         parser.add_argument(
             'uuid',
             metavar='<consumer_uuid>',
-            help='UUID of the consumer'
+            help='UUID of the consumer. It is strongly recommended to use '
+                 '``--os-placement-api-version 1.28`` or greater when using '
+                 'this option to ensure the other allocation information is '
+                 'retained. '
         )
         parser.add_argument(
             '--provider',
@@ -180,22 +183,27 @@ class UnsetAllocation(command.Lister, version.CheckerMixin):
                  'consumer has allocations on more than one provider, for '
                  'example after evacuating a server to another compute node '
                  'and you want to cleanup allocations on the source compute '
-                 'node resource provider in order to delete it. It is '
-                 'strongly recommended to use '
-                 '``--os-placement-api-version 1.28`` or greater when using '
-                 'this option to ensure the other allocation information is '
-                 'retained. Specify multiple times to remove allocations '
-                 'against multiple resource providers. Omit this option to '
-                 'remove all allocations for the consumer.'
+                 'node resource provider in order to delete it. Specify '
+                 'multiple times to remove allocations against multiple '
+                 'resource providers. Omit this option to remove all '
+                 'allocations for the consumer, or to remove all allocations'
+                 'of a specific resource class from all the resource provider '
+                 'with the ``--resource_class`` option. '
         )
-        # TODO(mriedem): Add a --resource-class option which can be used with
-        # or without --provider, e.g.:
-        # 1. allocation unset --provider P --resource-class VGPU = remove
-        #    VGPU allocation from provider P for this consumer.
-        # 2. allocation unset --resource-class VGPU = remove VGPU allocations
-        #    from all providers for this consumer.
-        # Make sure to update the note about omitting --provider in the
-        # command description above (due to example 2).
+        parser.add_argument(
+            '--resource-class',
+            metavar='resource_class',
+            action='append',
+            default=[],
+            help='Name of a resource class from which to remove allocations '
+                 'for the given consumer. This is useful when the consumer '
+                 'has allocations on more than one resource class. '
+                 'By default, this will remove allocations for the given '
+                 'resource class from all the providers. If ``--provider`` '
+                 'option is also specified, allocations to remove will be '
+                 'limited to that resource class of the given resource '
+                 'provider.'
+        )
         return parser
 
     # NOTE(mriedem): We require >= 1.12 because PUT requires project_id/user_id
@@ -210,19 +218,35 @@ class UnsetAllocation(command.Lister, version.CheckerMixin):
 
         # Get the current allocations.
         payload = http.request('GET', url).json()
+        allocations = payload['allocations']
 
-        if parsed_args.provider:
-            allocations = payload['allocations']
-            # Remove the given provider(s) from the allocations if it exists.
-            # Do not error out if the consumer does not have allocations
-            # against a provider in case we lost a race since the allocations
-            # are in the state the user wants them in anyway.
-            for rp_uuid in parsed_args.provider:
-                allocations.pop(rp_uuid, None)
+        if parsed_args.resource_class:
+            # Remove the given resource class. Do not error out if the
+            # consumer does not have allocations against that resource
+            # class.
+            rp_uuids = set(allocations)
+            if parsed_args.provider:
+                # If providers are also specified, we limit to remove
+                # allocations only from those providers
+                rp_uuids &= set(parsed_args.provider)
+            for rp_uuid in rp_uuids:
+                for rc in parsed_args.resource_class:
+                    allocations[rp_uuid]['resources'].pop(rc, None)
+                if not allocations[rp_uuid]['resources']:
+                    allocations.pop(rp_uuid, None)
         else:
-            # No --provider(s) specified so remove allocations from all
-            # providers.
-            allocations = {}
+            if parsed_args.provider:
+                # Remove the given provider(s) from the allocations if it
+                # exists. Do not error out if the consumer does not have
+                # allocations against a provider in case we lost a race since
+                # the allocations are in the state the user wants them in
+                # anyway.
+                for rp_uuid in parsed_args.provider:
+                    allocations.pop(rp_uuid, None)
+            else:
+                # No --provider(s) specified so remove allocations from all
+                # providers.
+                allocations = {}
 
         supports_consumer_generation = self.compare_version(version.ge('1.28'))
         # 1.28+ allows PUTing an empty allocations dict as long as a

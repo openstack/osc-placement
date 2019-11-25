@@ -260,19 +260,18 @@ class BaseTestCase(base.BaseTestCase):
         return result
 
     def resource_allocation_unset(self, consumer_uuid, provider=None,
-                                  use_json=True):
+                                  resource_class=None, use_json=True):
+        cmd = 'resource provider allocation unset %s' % consumer_uuid
+        if resource_class:
+            cmd += ' ' + ' '.join(
+                '--resource-class %s' % rc for rc in resource_class)
         if provider:
             # --provider can be specified multiple times so if we only get
             # a single string value convert to a list.
             if isinstance(provider, six.string_types):
                 provider = [provider]
-            cmd = 'resource provider allocation unset %s %s' % (
-                ' '.join('--provider %s' %
-                         rp_uuid for rp_uuid in provider),
-                consumer_uuid
-            )
-        else:
-            cmd = 'resource provider allocation unset %s' % consumer_uuid
+            cmd += ' ' + ' '.join(
+                '--provider %s' % rp_uuid for rp_uuid in provider)
         result = self.openstack(cmd, use_json=use_json)
 
         def cleanup(uuid):
