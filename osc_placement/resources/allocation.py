@@ -212,15 +212,13 @@ class UnsetAllocation(command.Lister, version.CheckerMixin):
         payload = http.request('GET', url).json()
 
         if parsed_args.provider:
-            old_allocations = payload['allocations']
-            # Remove the given provider from the allocations if it exists.
+            allocations = payload['allocations']
+            # Remove the given provider(s) from the allocations if it exists.
             # Do not error out if the consumer does not have allocations
-            # against the provider in case we lost a race since the allocations
+            # against a provider in case we lost a race since the allocations
             # are in the state the user wants them in anyway.
-            allocations = {
-                rp_uuid: {'resources': alloc['resources']}
-                for rp_uuid, alloc in old_allocations.items()
-                if rp_uuid not in parsed_args.provider}
+            for rp_uuid in parsed_args.provider:
+                allocations.pop(rp_uuid, None)
         else:
             # No --provider(s) specified so remove allocations from all
             # providers.
@@ -229,13 +227,13 @@ class UnsetAllocation(command.Lister, version.CheckerMixin):
         supports_consumer_generation = self.compare_version(version.ge('1.28'))
         # 1.28+ allows PUTing an empty allocations dict as long as a
         # consumer_generation is specified.
-        if allocations or (not allocations and supports_consumer_generation):
+        if allocations or supports_consumer_generation:
             payload['allocations'] = allocations
             http.request('PUT', url, json=payload)
         else:
-            # The user must have removed all of the allocations using the
-            # --no-provider option so just DELETE the allocations since we
-            # cannot PUT with an empty allocations dict before 1.28.
+            # The user must have removed all of the allocations so just DELETE
+            # the allocations since we cannot PUT with an empty allocations
+            # dict before 1.28.
             http.request('DELETE', url)
 
         resp = http.request('GET', url).json()
