@@ -25,7 +25,7 @@ class ListResourceClass(command.Lister):
 
     """Return a list of all resource classes.
 
-    This command requires at least --os-placement-api-version 1.2.
+    This command requires at least ``--os-placement-api-version 1.2``.
     """
 
     def get_parser(self, prog_name):
@@ -47,7 +47,7 @@ class CreateResourceClass(command.Command):
 
     """Create a new resource class.
 
-    This command requires at least --os-placement-api-version 1.2.
+    This command requires at least ``--os-placement-api-version 1.2``.
     """
 
     def get_parser(self, prog_name):
@@ -71,8 +71,9 @@ class SetResourceClass(command.Command):
 
     """Create or validate the existence of single resource class.
 
-    Unlike "resource class create" also succeed if the resource class
-    already exists, which makes this an idempotent check or create command.
+    Unlike ``openstack resource class create``, this command also succeeds if
+    the resource class already exists, which makes this an idempotent check or
+    create command.
 
     This command requires at least ``--os-placement-api-version 1.7``.
     """
@@ -98,9 +99,9 @@ class SetResourceClass(command.Command):
 
 class ShowResourceClass(command.ShowOne):
 
-    """Return a representation of the resource class identified by {name}.
+    """Return a representation of the resource class identified by ``<name>``.
 
-    This command requires at least --os-placement-api-version 1.2.
+    This command requires at least ``--os-placement-api-version 1.2``.
     """
 
     def get_parser(self, prog_name):
@@ -126,11 +127,11 @@ class ShowResourceClass(command.ShowOne):
 
 class DeleteResourceClass(command.Command):
 
-    """Delete the resource class identified by {name}.
+    """Delete the resource class identified by ``<name>``.
 
     Only custom resource classes can be deleted.
 
-    This command requires at least --os-placement-api-version 1.2.
+    This command requires at least ``--os-placement-api-version 1.2``.
     """
 
     def get_parser(self, prog_name):

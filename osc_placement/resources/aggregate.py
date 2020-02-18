@@ -28,7 +28,7 @@ class SetAggregate(command.Lister, version.CheckerMixin):
     UUID list will remove all associations with aggregates for the
     particular resource provider.
 
-    This command requires at least --os-placement-api-version 1.1.
+    This command requires at least ``--os-placement-api-version 1.1``.
     """
 
     def get_parser(self, prog_name):
@@ -92,7 +92,7 @@ class ListAggregate(command.Lister):
 
     """List resource provider aggregates.
 
-    This command requires at least --os-placement-api-version 1.1.
+    This command requires at least ``--os-placement-api-version 1.1``.
     """
 
     def get_parser(self, prog_name):

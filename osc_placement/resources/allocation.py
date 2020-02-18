@@ -57,7 +57,7 @@ class SetAllocation(command.Lister, version.CheckerMixin):
     allocations for accounting and data consistency reasons.
 
     Starting with ``--os-placement-api-version 1.12`` the API response
-    contains the project_id and user_id of allocations which also
+    contains the ``project_id`` and ``user_id`` of allocations which also
     appears in the CLI output.
 
     Starting with ``--os-placement-api-version 1.28`` a consumer generation is
@@ -251,9 +251,8 @@ class ShowAllocation(command.Lister, version.CheckerMixin):
     """Show resource allocations for a given consumer.
 
     Starting with ``--os-placement-api-version 1.12`` the API response contains
-    the project_id and user_id of allocations which also appears in the CLI
-    output.
-
+    the ``project_id`` and ``user_id`` of allocations which also appears in the
+    CLI output.
     """
 
     def get_parser(self, prog_name):

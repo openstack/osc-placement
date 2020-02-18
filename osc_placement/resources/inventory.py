@@ -104,17 +104,18 @@ class SetInventory(command.Lister, version.CheckerMixin):
     Note that by default this is a full replacement of the existing inventory.
     If you want to retain the existing inventory and add a new resource class
     inventory, you must specify all resource class inventory, old and new, or
-    specify the --amend option.
+    specify the ``--amend`` option.
 
     If a specific inventory field is not specified for a given resource class,
-    it is assumed to be the total, i.e. --resource VCPU=16 is equivalent to
-    --resource VCPU:total=16.
+    it is assumed to be the total, i.e. ``--resource VCPU=16`` is equivalent to
+    ``--resource VCPU:total=16``.
 
-    Example: openstack resource provider inventory set <uuid> \
-                 --resource VCPU=16 \
-                 --resource MEMORY_MB=2048 \
-                 --resource MEMORY_MB:step_size=128
+    Example::
 
+        openstack resource provider inventory set <uuid> \
+            --resource VCPU=16 \
+            --resource MEMORY_MB=2048 \
+            --resource MEMORY_MB:step_size=128
     """
 
     def get_parser(self, prog_name):
@@ -250,14 +251,14 @@ class SetInventory(command.Lister, version.CheckerMixin):
 
 
 class SetClassInventory(command.ShowOne):
-
     """Replace the inventory record of the class for the resource provider.
 
-    Example: openstack resource provider inventory class set <uuid> VCPU \
-                 --total 16 \
-                 --max_unit 4 \
-                 --reserved 1
+    Example::
 
+        openstack resource provider inventory class set <uuid> VCPU \
+            --total 16 \
+            --max_unit 4 \
+            --reserved 1
     """
 
     def get_parser(self, prog_name):
@@ -303,15 +304,13 @@ class SetClassInventory(command.ShowOne):
 
 
 class DeleteInventory(command.Command, version.CheckerMixin):
-
     """Delete the inventory.
 
-    Depending on the resource class argument presence, it can
-    delete all inventory for a given resource provider or for a resource
-    provider/class pair.
+    Depending on the resource class argument presence, delete all inventory for
+    a given resource provider or for a resource provider/class pair.
 
-    Delete all inventories for given resource provider
-    requires at least ``--os-placement-api-version 1.5``.
+    Delete all inventories for given resource provider requires at least
+    ``--os-placement-api-version 1.5``.
     """
 
     def get_parser(self, prog_name):
@@ -326,8 +325,8 @@ class DeleteInventory(command.Command, version.CheckerMixin):
             '--resource-class',
             metavar='<resource_class>',
             required=self.compare_version(version.lt('1.5')),
-            help=(RC_HELP
-                  + '\nThis argument can be omitted starting with '
+            help=(RC_HELP + '\n'
+                  'This argument can be omitted starting with '
                   '``--os-placement-api-version 1.5``. If it is omitted all '
                   'inventories of the specified resource provider '
                   'will be deleted.')

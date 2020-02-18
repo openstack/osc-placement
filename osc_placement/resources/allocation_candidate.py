@@ -25,7 +25,7 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
 
     Returns a representation of a collection of allocation requests and
     resource provider summaries. Each allocation request has information
-    to issue an "openstack resource provider allocation set" request to claim
+    to issue an ``openstack resource provider allocation set`` request to claim
     resources against a related set of resource providers.
 
     As several allocation requests are available its necessary to select one.
@@ -44,9 +44,9 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
       +---+------------+-------------------------+-------------------------+
 
     In this case, the user is looking for resource providers that can have
-    capacity to allocate 1 VCPU resource class. There is one resource provider
-    that can serve that allocation request and that resource providers current
-    VCPU inventory used is 0 and available capacity is 128.
+    capacity to allocate 1 ``VCPU`` resource class. There is one resource
+    provider that can serve that allocation request and that resource providers
+    current ``VCPU`` inventory used is 0 and available capacity is 128.
 
     This command requires at least ``--os-placement-api-version 1.10``.
     """
