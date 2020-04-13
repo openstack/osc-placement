@@ -47,8 +47,8 @@ class SessionClient(object):
 
     def request(self, method, url, **kwargs):
         version = kwargs.pop('version', None)
-        api_version = (self.ks_filter['service_type'] + ' ' +
-                       (version or self.api_version))
+        api_version = (self.ks_filter['service_type'] + ' '
+                       + (version or self.api_version))
         headers = kwargs.pop('headers', {})
         headers.setdefault('OpenStack-API-Version', api_version)
         headers.setdefault('Accept', 'application/json')

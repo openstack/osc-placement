@@ -326,8 +326,8 @@ class DeleteInventory(command.Command, version.CheckerMixin):
             '--resource-class',
             metavar='<resource_class>',
             required=self.compare_version(version.lt('1.5')),
-            help=(RC_HELP +
-                  '\nThis argument can be omitted starting with '
+            help=(RC_HELP
+                  + '\nThis argument can be omitted starting with '
                   '``--os-placement-api-version 1.5``. If it is omitted all '
                   'inventories of the specified resource provider '
                   'will be deleted.')
