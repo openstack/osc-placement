@@ -30,7 +30,7 @@ project = u'osc-placement'
 copyright = u'2016, OpenStack Foundation'
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'native'
 
 # -- Options for HTML output --------------------------------------------------
 
@@ -46,8 +46,10 @@ autoprogram_cliff_ignored = [
     '--print-empty', '--prefix', '--noindent', '--quote']
 
 # openstackdocstheme options
-repository_name = 'openstack/osc-placement'
-use_storyboard = True
+openstackdocs_repo_name = 'openstack/osc-placement'
+openstackdocs_pdf_link = True
+openstackdocs_auto_name = False
+openstackdocs_use_storyboard = True
 
 # -- Options for LaTeX output -------------------------------------------------
 
