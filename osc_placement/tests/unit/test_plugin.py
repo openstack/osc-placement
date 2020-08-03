@@ -11,8 +11,8 @@
 # under the License.
 
 import argparse
+from unittest import mock
 
-import mock
 from oslotest import base
 
 import osc_placement.plugin as plugin
