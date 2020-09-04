@@ -41,12 +41,8 @@ RESET_LOGGING = [
 
 RP_PREFIX = 'osc-placement-functional-tests-'
 
-# argparse in python 2 and 3 have different error messages
-ARGUMENTS_MISSING = 'too few arguments'
-ARGUMENTS_REQUIRED = 'argument %s is required'
-if six.PY3:
-    ARGUMENTS_MISSING = 'the following arguments are required'
-    ARGUMENTS_REQUIRED = 'the following arguments are required: %s'
+ARGUMENTS_MISSING = 'the following arguments are required'
+ARGUMENTS_REQUIRED = 'the following arguments are required: %s'
 
 
 class CommandException(Exception):
