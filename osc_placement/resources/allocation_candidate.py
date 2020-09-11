@@ -65,7 +65,7 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
                  'collectively have the capacity and availability to serve. '
                  'Can be specified multiple times per resource class. '
                  'For example: '
-                 '``--resource VCP=4 --resource DISK_GB=64 '
+                 '``--resource VCPU=4 --resource DISK_GB=64 '
                  '--resource MEMORY_MB=2048``'
         )
         parser.add_argument(
