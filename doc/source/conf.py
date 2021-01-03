@@ -26,8 +26,8 @@ extensions = [
 master_doc = 'index'
 
 # General information about the project.
-project = u'osc-placement'
-copyright = u'2016, OpenStack Foundation'
+project = 'osc-placement'
+copyright = '2016, OpenStack Foundation'
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'native'
@@ -58,6 +58,6 @@ openstackdocs_use_storyboard = True
 # [howto/manual]).
 latex_use_xindy = False
 latex_documents = [
-    ('index', 'doc-osc-placement.tex', u'osc-placement Documentation',
-     u'OpenStack Foundation', 'manual'),
+    ('index', 'doc-osc-placement.tex', 'osc-placement Documentation',
+     'OpenStack Foundation', 'manual'),
 ]
