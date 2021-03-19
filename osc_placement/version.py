@@ -40,7 +40,11 @@ SUPPORTED_VERSIONS = [
     '1.22',
     '1.23',  # unused
     '1.24',
+    '1.25',
+    '1.26',  # unused
+    '1.27',  # unused
     '1.28',  # Added for provider allocation (un)set (Ussuri)
+    '1.29',
 ]
 
 

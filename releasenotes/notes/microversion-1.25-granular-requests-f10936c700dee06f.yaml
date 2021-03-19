@@ -1,0 +1,27 @@
+---
+features:
+  - |
+    The ``openstack allocation candidate list`` command now supports
+    ``--group`` and ``--group-policy`` option. The ``--group`` option accepts
+    an integer to group granular requests. If specified, following given
+    options of resources, required/forbidden traits, and aggregates are
+    associated to that group and will be satisfied by the same resource
+    provider in the response. ``--group`` can be repeated to get candidates
+    from multiple resource providers in a same resource provider tree.
+    If multiple groups are supplied, the separate groups may or may not be
+    satisfied by the same provider. If you want the groups to be satisfied by
+    different resource providers, set ``--group_policy`` to ``isolate``.
+    For example::
+
+      openstack allocation candidate list \
+          --group 1 --resource VCPU=3 --required HW_CPU_X86_SSE \
+          --group 2 --resource VCPU=4 \
+          --group_policy isolate
+
+    This option is available with ``--os-placement-api-version 1.25`` or
+    greater, but to have placement server be aware of nested providers, use
+    ``--os-placement-api-version 1.29`` or greater.
+
+    See the `REST API Version History`__ for more details.
+
+    .. __: https://docs.openstack.org/placement/latest/placement-api-microversion-history.html
