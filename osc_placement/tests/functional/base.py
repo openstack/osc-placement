@@ -200,7 +200,8 @@ class BaseTestCase(base.BaseTestCase):
 
     def resource_provider_list(self, uuid=None, name=None,
                                aggregate_uuids=None, resources=None,
-                               in_tree=None, required=None, forbidden=None):
+                               in_tree=None, required=None, forbidden=None,
+                               member_of=None, may_print_to_stderr=False):
         to_exec = 'resource provider list'
         if uuid:
             to_exec += ' --uuid ' + uuid
@@ -217,8 +218,12 @@ class BaseTestCase(base.BaseTestCase):
             to_exec += ' ' + ' '.join('--required %s' % t for t in required)
         if forbidden:
             to_exec += ' ' + ' '.join('--forbidden %s' % f for f in forbidden)
+        if member_of:
+            to_exec += ' ' + ' '.join(
+                ['--member-of %s' % m for m in member_of])
 
-        return self.openstack(to_exec, use_json=True)
+        return self.openstack(
+            to_exec, use_json=True, may_print_to_stderr=may_print_to_stderr)
 
     def resource_provider_delete(self, uuid):
         return self.openstack('resource provider delete ' + uuid)
@@ -240,8 +245,8 @@ class BaseTestCase(base.BaseTestCase):
             cmd += ' --project-id %s' % project_id
         if user_id:
             cmd += ' --user-id %s' % user_id
-        result = self.openstack(cmd, use_json=use_json,
-                                may_print_to_stderr=may_print_to_stderr)
+        result = self.openstack(
+            cmd, use_json=use_json, may_print_to_stderr=may_print_to_stderr)
 
         def cleanup(uuid):
             try:
@@ -406,7 +411,8 @@ class BaseTestCase(base.BaseTestCase):
 
     def allocation_candidate_list(self, resources, required=None,
                                   forbidden=None, limit=None,
-                                  aggregate_uuids=None):
+                                  aggregate_uuids=None, member_of=None,
+                                  may_print_to_stderr=False):
         cmd = 'allocation candidate list ' + ' '.join(
             '--resource %s' % resource for resource in resources)
         if required is not None:
@@ -418,4 +424,8 @@ class BaseTestCase(base.BaseTestCase):
         if aggregate_uuids:
             cmd += ' ' + ' '.join(
                    '--aggregate-uuid %s' % a for a in aggregate_uuids)
-        return self.openstack(cmd, use_json=True)
+        if member_of:
+            cmd += ' ' + ' '.join(
+                ['--member-of %s' % m for m in member_of])
+        return self.openstack(
+            cmd, use_json=True, may_print_to_stderr=may_print_to_stderr)
