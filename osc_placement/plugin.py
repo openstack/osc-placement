@@ -52,6 +52,7 @@ def build_option_parser(parser):
             'OS_PLACEMENT_API_VERSION',
             default=default
         ),
-        help='Placement API version, default=%s' % default)
+        help='Placement API version, default=%s '
+             '(Env: OS_PLACEMENT_API_VERSION)' % default)
 
     return parser
