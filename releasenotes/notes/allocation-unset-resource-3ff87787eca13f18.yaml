@@ -1,0 +1,19 @@
+---
+features:
+  - |
+    The ``openstack resource provider allocation unset`` command now supports
+    ``--resource-class`` option, which accepts string of a resource class.
+    This will remove allocations for the given resource class from all the
+    providers. If ``--provider`` option is also specified, allocations to
+    remove will be limited to the given resource class of the given resource
+    provider.
+
+    example1::
+
+        # remove VGPU allocation from provider P for this consumer.
+        allocation unset <consumer_uuid> --provider P --resource-class VGPU
+
+    example2::
+
+        # remove VGPU allocations from all providers for this consumer.
+        allocation unset <consumer_uuid> --resource-class VGPU
