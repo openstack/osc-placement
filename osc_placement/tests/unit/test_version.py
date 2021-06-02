@@ -104,7 +104,6 @@ class TestVersion(base.BaseTestCase):
             t.check_version, version.lt('1.2'))
 
     def test_max_version_consistency(self):
-
         def _convert_to_tuple(str):
             return tuple(map(int, str.split(".")))
 
@@ -121,3 +120,10 @@ class TestVersion(base.BaseTestCase):
                 break
         if not there_is_gap:
             self.assertEqual(max_ver, versions[-1])
+
+    def test_get_version_returns_max_no_gap_when_no_session(self):
+        obj = mock.Mock()
+        obj.app.client_manager.session = None
+        ret = version.get_version(obj)
+        self.assertEqual(version.MAX_VERSION_NO_GAP, ret)
+        obj.app.client_manager.placement.api_version.assert_not_called()

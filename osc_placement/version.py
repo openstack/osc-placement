@@ -139,6 +139,8 @@ def check(*predicates, **check_kwargs):
 def get_version(obj):
     """Extract version from a command object."""
     try:
+        if obj.app.client_manager.session is None:
+            return MAX_VERSION_NO_GAP
         version = obj.app.client_manager.placement.api_version
     except AttributeError:
         # resource does not have api_version attr when docs are generated
