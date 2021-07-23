@@ -62,6 +62,11 @@ class SetAllocation(command.Lister, version.CheckerMixin):
 
     Starting with ``--os-placement-api-version 1.28`` a consumer generation is
     used which facilitates safe concurrent modification of an allocation.
+
+    Starting with ``--os-placement-api-version 1.38`` it is required to specify
+    ``--consumer-type`` to set allocations. It is helpful to provide a
+    ``--consumer-type`` when setting allocations so that resource usages can be
+    filtered on consumer types.
     """
 
     def get_parser(self, prog_name):
@@ -96,6 +101,14 @@ class SetAllocation(command.Lister, version.CheckerMixin):
                  'This option is required starting from '
                  '``--os-placement-api-version 1.8``.',
             required=self.compare_version(version.ge('1.8'))
+        )
+        parser.add_argument(
+            '--consumer-type',
+            metavar='consumer_type',
+            help='The type of the consumer. '
+                 'This option is required starting from '
+                 '``--os-placement-api-version 1.38``.',
+            required=self.compare_version(version.ge('1.38'))
         )
         return parser
 
@@ -136,18 +149,28 @@ class SetAllocation(command.Lister, version.CheckerMixin):
             self.log.warning('--project-id and --user-id options do not '
                              'affect allocation for '
                              '--os-placement-api-version less than 1.8')
+        if self.compare_version(version.ge('1.38')):
+            payload['consumer_type'] = parsed_args.consumer_type
+        elif parsed_args.consumer_type:
+            self.log.warning('--consumer-type option does not affect '
+                             'allocation for --os-placement-api-version less '
+                             'than 1.38')
         http.request('PUT', url, json=payload)
         resp = http.request('GET', url).json()
         per_provider = resp['allocations'].items()
+        props = {}
 
         fields = ('resource_provider', 'generation', 'resources')
-        allocs = [dict(resource_provider=k, **v) for k, v in per_provider]
         if self.compare_version(version.ge('1.12')):
             fields += ('project_id', 'user_id')
-            [alloc.update(project_id=resp['project_id'],
-                          user_id=resp['user_id'])
-             for alloc in allocs]
+            props['project_id'] = resp['project_id']
+            props['user_id'] = resp['user_id']
+        if self.compare_version(version.ge('1.38')):
+            fields += ('consumer_type',)
+            props['consumer_type'] = resp['consumer_type']
 
+        allocs = [dict(resource_provider=k, **props, **v)
+                  for k, v in per_provider]
         rows = (utils.get_dict_properties(a, fields) for a in allocs)
         return fields, rows
 
@@ -262,11 +285,16 @@ class UnsetAllocation(command.Lister, version.CheckerMixin):
 
         resp = http.request('GET', url).json()
         per_provider = resp['allocations'].items()
+        props = {}
 
         fields = ('resource_provider', 'generation', 'resources',
                   'project_id', 'user_id')
+        if self.compare_version(version.ge('1.38')):
+            fields += ('consumer_type',)
+            props['consumer_type'] = resp['consumer_type']
         allocs = [dict(project_id=resp['project_id'], user_id=resp['user_id'],
-                       resource_provider=k, **v) for k, v in per_provider]
+                       resource_provider=k, **props, **v)
+                  for k, v in per_provider]
         rows = (utils.get_dict_properties(a, fields) for a in allocs)
         return fields, rows
 
@@ -277,6 +305,9 @@ class ShowAllocation(command.Lister, version.CheckerMixin):
     Starting with ``--os-placement-api-version 1.12`` the API response contains
     the ``project_id`` and ``user_id`` of allocations which also appears in the
     CLI output.
+
+    Starting with ``--os-placement-api-version 1.38`` the API response contains
+    the ``consumer_type`` of consumer which also appears in the CLI output.
     """
 
     def get_parser(self, prog_name):
@@ -296,18 +327,19 @@ class ShowAllocation(command.Lister, version.CheckerMixin):
         url = BASE_URL + '/' + parsed_args.uuid
         resp = http.request('GET', url).json()
         per_provider = resp['allocations'].items()
-        if self.compare_version(version.ge('1.12')):
-            allocs = [dict(
-                resource_provider=k,
-                project_id=resp['project_id'],
-                user_id=resp['user_id'],
-                **v) for k, v in per_provider]
-        else:
-            allocs = [dict(resource_provider=k, **v) for k, v in per_provider]
+        props = {}
 
         fields = ('resource_provider', 'generation', 'resources')
         if self.compare_version(version.ge('1.12')):
             fields += ('project_id', 'user_id')
+            props['project_id'] = resp['project_id']
+            props['user_id'] = resp['user_id']
+        if self.compare_version(version.ge('1.38')):
+            fields += ('consumer_type',)
+            props['consumer_type'] = resp['consumer_type']
+
+        allocs = [dict(resource_provider=k, **props, **v)
+                  for k, v in per_provider]
 
         rows = (utils.get_dict_properties(a, fields) for a in allocs)
         return fields, rows

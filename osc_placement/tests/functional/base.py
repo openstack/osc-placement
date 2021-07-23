@@ -236,7 +236,8 @@ class BaseTestCase(base.BaseTestCase):
 
     def resource_allocation_set(self, consumer_uuid, allocations,
                                 project_id=None, user_id=None,
-                                use_json=True, may_print_to_stderr=False):
+                                consumer_type=None, use_json=True,
+                                may_print_to_stderr=False):
         cmd = 'resource provider allocation set {allocs} {uuid}'.format(
             uuid=consumer_uuid,
             allocs=' '.join('--allocation {}'.format(a) for a in allocations)
@@ -245,6 +246,8 @@ class BaseTestCase(base.BaseTestCase):
             cmd += ' --project-id %s' % project_id
         if user_id:
             cmd += ' --user-id %s' % user_id
+        if consumer_type:
+            cmd += ' --consumer-type %s' % consumer_type
         result = self.openstack(
             cmd, use_json=use_json, may_print_to_stderr=may_print_to_stderr)
 

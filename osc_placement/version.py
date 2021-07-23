@@ -49,6 +49,7 @@ SUPPORTED_MICROVERSIONS = [
     '1.28',  # Added for provider allocation (un)set (Ussuri)
     '1.29',
     '1.37',  # unused
+    '1.38',  # Added for consumer types (Xena)
 ]
 SUPPORTED_VERSIONS = SUPPORTED_MICROVERSIONS + NEGOTIATE_VERSIONS
 # The max microversion lower than which are all supported by this client.
