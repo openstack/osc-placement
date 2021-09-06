@@ -228,11 +228,10 @@ class BaseTestCase(base.BaseTestCase):
     def resource_provider_delete(self, uuid):
         return self.openstack('resource provider delete ' + uuid)
 
-    def resource_allocation_show(self, consumer_uuid):
-        return self.openstack(
-            'resource provider allocation show ' + consumer_uuid,
-            use_json=True
-        )
+    def resource_allocation_show(self, consumer_uuid, columns=()):
+        cmd = 'resource provider allocation show ' + consumer_uuid
+        cmd += ' '.join(' --column %s' % c for c in columns)
+        return self.openstack(cmd, use_json=True)
 
     def resource_allocation_set(self, consumer_uuid, allocations,
                                 project_id=None, user_id=None,
@@ -262,8 +261,10 @@ class BaseTestCase(base.BaseTestCase):
 
         return result
 
-    def resource_allocation_unset(self, consumer_uuid, provider=None,
-                                  resource_class=None, use_json=True):
+    def resource_allocation_unset(
+        self, consumer_uuid, provider=None, resource_class=None, use_json=True,
+        columns=(),
+    ):
         cmd = 'resource provider allocation unset %s' % consumer_uuid
         if resource_class:
             cmd += ' ' + ' '.join(
@@ -275,6 +276,9 @@ class BaseTestCase(base.BaseTestCase):
                 provider = [provider]
             cmd += ' ' + ' '.join(
                 '--provider %s' % rp_uuid for rp_uuid in provider)
+
+        cmd += ' '.join(' --column %s' % c for c in columns)
+
         result = self.openstack(cmd, use_json=use_json)
 
         def cleanup(uuid):
