@@ -198,19 +198,9 @@ class TestAllocation112(base.BaseTestCase):
         self.assertEqual([], result)
 
     def test_allocation_show_empty(self):
-        # FIXME(gibi): this is bug https://bugs.launchpad.net/nova/+bug/1942740
-        # the command fails with KeyError on project_id when the allocation is
-        # empty
-        self.assertCommandFailed(
-            'project_id',
-            self.resource_allocation_show,
-            str(uuid.uuid4()),
-            columns=("resources",),
-        )
-        # it should be
-        # alloc = self.resource_allocation_show(
-        #     str(uuid.uuid4()), columns=("resources",))
-        # self.assertEqual([], alloc)
+        alloc = self.resource_allocation_show(
+            str(uuid.uuid4()), columns=('resources',))
+        self.assertEqual([], alloc)
 
 
 class TestAllocation128(TestAllocation112):
@@ -317,19 +307,9 @@ class TestAllocation138(TestAllocation128):
             consumer_type="INSTANCE",
         )
 
-        # FIXME(gibi): This is bug https://bugs.launchpad.net/nova/+bug/1942740
-        # The command fails with a KeyError as it tries to parse the
-        # consumer_type out from and empty allocation
-        self.assertCommandFailed(
-            "consumer_type",
-            self.resource_allocation_unset,
-            consumer_uuid,
-            columns=('resources', 'consumer_type')
-        )
-        # it should be
-        # result = self.resource_allocation_unset(
-        #     consumer_uuid, columns=('resources', 'consumer_type'))
-        # self.assertEqual([], result)
+        result = self.resource_allocation_unset(
+            consumer_uuid, columns=('resources', 'consumer_type'))
+        self.assertEqual([], result)
 
 
 class TestAllocationUnsetOldVersion(base.BaseTestCase):

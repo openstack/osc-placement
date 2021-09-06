@@ -291,7 +291,7 @@ class UnsetAllocation(command.Lister, version.CheckerMixin):
                   'project_id', 'user_id')
         if self.compare_version(version.ge('1.38')):
             fields += ('consumer_type',)
-            props['consumer_type'] = resp['consumer_type']
+            props['consumer_type'] = resp.get('consumer_type')
         allocs = [dict(project_id=resp['project_id'], user_id=resp['user_id'],
                        resource_provider=k, **props, **v)
                   for k, v in per_provider]
@@ -332,11 +332,11 @@ class ShowAllocation(command.Lister, version.CheckerMixin):
         fields = ('resource_provider', 'generation', 'resources')
         if self.compare_version(version.ge('1.12')):
             fields += ('project_id', 'user_id')
-            props['project_id'] = resp['project_id']
-            props['user_id'] = resp['user_id']
+            props['project_id'] = resp.get('project_id')
+            props['user_id'] = resp.get('user_id')
         if self.compare_version(version.ge('1.38')):
             fields += ('consumer_type',)
-            props['consumer_type'] = resp['consumer_type']
+            props['consumer_type'] = resp.get('consumer_type')
 
         allocs = [dict(resource_provider=k, **props, **v)
                   for k, v in per_provider]
