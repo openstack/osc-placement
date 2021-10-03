@@ -13,8 +13,6 @@
 import operator
 import uuid
 
-import six
-
 from osc_placement.tests.functional import base
 
 
@@ -39,12 +37,12 @@ class TestResourceProvider(base.BaseTestCase):
         self.assertEqual([], after_delete)
 
     def test_resource_provider_delete_not_found(self):
-        rp_uuid = six.text_type(uuid.uuid4())
+        rp_uuid = str(uuid.uuid4())
         msg = 'No resource provider with uuid ' + rp_uuid + ' found'
 
         exc = self.assertRaises(base.CommandException,
                                 self.resource_provider_delete, rp_uuid)
-        self.assertIn(msg, six.text_type(exc))
+        self.assertIn(msg, str(exc))
 
     def test_resource_provider_set(self):
         orig_name = self.rand_name('test_rp_orig_name')
@@ -61,12 +59,12 @@ class TestResourceProvider(base.BaseTestCase):
         self.assertEqual(0, after_update['generation'])
 
     def test_resource_provider_set_not_found(self):
-        rp_uuid = six.text_type(uuid.uuid4())
+        rp_uuid = str(uuid.uuid4())
         msg = 'No resource provider with uuid ' + rp_uuid + ' found'
 
         exc = self.assertRaises(base.CommandException,
                                 self.resource_provider_set, rp_uuid, 'test')
-        self.assertIn(msg, six.text_type(exc))
+        self.assertIn(msg, str(exc))
 
     def test_resource_provider_show(self):
         created = self.resource_provider_create()
@@ -99,12 +97,12 @@ class TestResourceProvider(base.BaseTestCase):
         self.assertEqual(expected, retrieved)
 
     def test_resource_provider_show_not_found(self):
-        rp_uuid = six.text_type(uuid.uuid4())
+        rp_uuid = str(uuid.uuid4())
         msg = 'No resource provider with uuid ' + rp_uuid + ' found'
 
         exc = self.assertRaises(base.CommandException,
                                 self.resource_provider_show, rp_uuid)
-        self.assertIn(msg, six.text_type(exc))
+        self.assertIn(msg, str(exc))
 
     def test_resource_provider_list(self):
         rp1 = self.resource_provider_create()
@@ -256,7 +254,7 @@ class TestResourceProvider114(base.BaseTestCase):
             child['uuid'],
             name='mandatory_name_2',
             parent_provider_uuid=parent2['uuid'])
-        self.assertIn('HTTP 400', six.text_type(exc))
+        self.assertIn('HTTP 400', str(exc))
 
     def test_resource_provider_list_in_tree(self):
         rp1 = self.resource_provider_create()
@@ -278,7 +276,7 @@ class TestResourceProvider114(base.BaseTestCase):
             base.CommandException,
             self.resource_provider_delete,
             parent['uuid'])
-        self.assertIn('HTTP 409', six.text_type(exc))
+        self.assertIn('HTTP 409', str(exc))
 
 
 class TestResourceProvider118(base.BaseTestCase):

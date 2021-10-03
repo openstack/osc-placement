@@ -13,8 +13,6 @@
 import operator
 import uuid
 
-import six
-
 from osc_placement.tests.functional import base
 
 
@@ -52,7 +50,7 @@ class TestUsage(base.BaseTestCase):
                                 rp_uuid)
         self.assertIn(
             'No resource provider with uuid {} found'.format(rp_uuid),
-            six.text_type(exc)
+            str(exc)
         )
 
     def test_usage_empty(self):

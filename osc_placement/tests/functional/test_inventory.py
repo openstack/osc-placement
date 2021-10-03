@@ -14,8 +14,6 @@ import collections
 import copy
 import uuid
 
-import six
-
 from osc_placement.tests.functional import base
 
 
@@ -53,7 +51,7 @@ class TestInventory(base.BaseTestCase):
                                 self.resource_inventory_show,
                                 rp_uuid, 'VCPU')
         self.assertIn('No inventory of class VCPU for {}'.format(rp_uuid),
-                      six.text_type(exc))
+                      str(exc))
 
     def test_inventory_list(self):
         rp_uuid = self.rp['uuid']
@@ -86,14 +84,14 @@ class TestInventory(base.BaseTestCase):
                                 self.resource_inventory_show,
                                 rp_uuid, 'VCPU')
         self.assertIn('No inventory of class VCPU for {}'.format(rp_uuid),
-                      six.text_type(exc))
+                      str(exc))
 
     def test_inventory_delete_not_found(self):
         exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_delete,
                                 self.rp['uuid'], 'VCPU')
         self.assertIn('No inventory of class VCPU found for delete',
-                      six.text_type(exc))
+                      str(exc))
 
     def test_delete_all_inventories(self):
         # Negative test to assert command failure because
@@ -109,7 +107,7 @@ class TestSetInventory(base.BaseTestCase):
         exc = self.assertRaises(
             base.CommandException,
             self.openstack, 'resource provider inventory set')
-        self.assertIn(base.ARGUMENTS_MISSING, six.text_type(exc))
+        self.assertIn(base.ARGUMENTS_MISSING, str(exc))
 
     def test_set_empty_inventories(self):
         rp = self.resource_provider_create()
@@ -121,30 +119,30 @@ class TestSetInventory(base.BaseTestCase):
         exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], 'VCPU')
-        self.assertIn('must have "name=value"', six.text_type(exc))
+        self.assertIn('must have "name=value"', str(exc))
         exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], 'VCPU==')
-        self.assertIn('must have "name=value"', six.text_type(exc))
+        self.assertIn('must have "name=value"', str(exc))
         exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], '=10')
-        self.assertIn('must be not empty', six.text_type(exc))
+        self.assertIn('must be not empty', str(exc))
         exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], 'v=')
-        self.assertIn('must be not empty', six.text_type(exc))
+        self.assertIn('must be not empty', str(exc))
 
         # unknown class
         exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], 'UNKNOWN_CPU=16')
-        self.assertIn('Unknown resource class', six.text_type(exc))
+        self.assertIn('Unknown resource class', str(exc))
         # unknown property
         exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], 'VCPU:fake=16')
-        self.assertIn('Unknown inventory field', six.text_type(exc))
+        self.assertIn('Unknown inventory field', str(exc))
 
     def test_set_multiple_classes(self):
         rp = self.resource_provider_create()
@@ -178,7 +176,7 @@ class TestSetInventory(base.BaseTestCase):
         exc = self.assertRaises(base.CommandException,
                                 self.resource_inventory_set,
                                 rp['uuid'], 'VCPU=8', 'UNKNOWN=4')
-        self.assertIn('Unknown resource class', six.text_type(exc))
+        self.assertIn('Unknown resource class', str(exc))
         self.assertEqual([], self.resource_inventory_list(rp['uuid']))
 
     def test_replace_previous_values(self):
@@ -205,24 +203,24 @@ class TestSetInventory(base.BaseTestCase):
         exc = self.assertRaises(
             base.CommandException,
             self.openstack, 'resource provider inventory class set')
-        self.assertIn(base.ARGUMENTS_MISSING, six.text_type(exc))
+        self.assertIn(base.ARGUMENTS_MISSING, str(exc))
         exc = self.assertRaises(
             base.CommandException,
             self.openstack, 'resource provider inventory class set fake_uuid')
-        self.assertIn(base.ARGUMENTS_MISSING, six.text_type(exc))
+        self.assertIn(base.ARGUMENTS_MISSING, str(exc))
         exc = self.assertRaises(
             base.CommandException,
             self.openstack,
             ('resource provider inventory class set '
              'fake_uuid fake_class --total 5 --unknown 1'))
-        self.assertIn('unrecognized arguments', six.text_type(exc))
+        self.assertIn('unrecognized arguments', str(exc))
         # Valid RP UUID and resource class, but no inventory field.
         rp = self.resource_provider_create()
         exc = self.assertRaises(
             base.CommandException, self.openstack,
             'resource provider inventory class set %s VCPU' % rp['uuid'])
         self.assertIn(base.ARGUMENTS_REQUIRED % '--total',
-                      six.text_type(exc))
+                      str(exc))
 
     def test_set_inventory_for_resource_class(self):
         rp = self.resource_provider_create()
@@ -429,7 +427,7 @@ class TestAggregateInventory(base.BaseTestCase):
                                 'VCPU=8',
                                 aggregate=True)
         self.assertIn('No resource providers found in aggregate with uuid {}'
-                      .format(nonexistent_agg), six.text_type(exc))
+                      .format(nonexistent_agg), str(exc))
 
     def test_with_aggregate_one_fails(self):
         # Set up some existing inventories with two resource providers
@@ -451,7 +449,7 @@ class TestAggregateInventory(base.BaseTestCase):
                                 self.resource_inventory_set,
                                 agg, *new_resources, aggregate=True)
         self.assertIn('Failed to set inventory for 1 of 2 resource providers.',
-                      six.text_type(exc))
+                      str(exc))
         output = self.output.getvalue() + self.error.getvalue()
         self.assertIn('Failed to set inventory for resource provider %s:' %
                       rp1_uuid, output)

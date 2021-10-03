@@ -13,7 +13,6 @@
 from unittest import mock
 
 import oslotest.base as base
-import six
 
 from osc_placement import version
 
@@ -57,13 +56,13 @@ class TestVersion(base.BaseTestCase):
             ValueError, version.compare, '1.0', version.ge('1.1'))
         self.assertEqual(
             'Operation or argument is not supported with version 1.0; '
-            'requires at least version 1.1', six.text_type(ex))
+            'requires at least version 1.1', str(ex))
         ex = self.assertRaises(
             ValueError, version.compare, '1.0',
             version.eq('1.1'), version.eq('1.5'), op=any)
         self.assertEqual(
             'Operation or argument is not supported with version 1.0; '
-            'requires version 1.1, or requires version 1.5', six.text_type(ex))
+            'requires version 1.1, or requires version 1.5', str(ex))
 
     def test_compare_with_exc(self):
         self.assertTrue(version.compare('1.05', version.gt('1.4')))

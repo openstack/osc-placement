@@ -10,7 +10,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import six
 from six.moves.urllib import parse as urlparse
 
 
@@ -21,7 +20,7 @@ def encode(value, encoding='utf-8'):
 
     """
 
-    if isinstance(value, six.text_type):
+    if isinstance(value, str):
         return value.encode(encoding)
     else:
         return value

@@ -12,8 +12,6 @@
 
 import uuid
 
-import six
-
 from osc_placement.tests.functional import base
 
 
@@ -91,7 +89,7 @@ class TestAllocation(base.BaseTestCase):
                                 self.resource_allocation_set,
                                 consumer_uuid, [])
         self.assertIn('At least one resource allocation must be specified',
-                      six.text_type(exc))
+                      str(exc))
 
     def test_allocation_delete(self):
         consumer_uuid = str(uuid.uuid4())
@@ -112,7 +110,7 @@ class TestAllocation(base.BaseTestCase):
         msg = "No allocations for consumer '{}'".format(consumer_uuid)
         exc = self.assertRaises(base.CommandException,
                                 self.resource_allocation_delete, consumer_uuid)
-        self.assertIn(msg, six.text_type(exc))
+        self.assertIn(msg, str(exc))
 
 
 class TestAllocation18(base.BaseTestCase):
