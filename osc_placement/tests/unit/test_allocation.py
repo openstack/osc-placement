@@ -55,22 +55,22 @@ class TestAllocation(base.BaseTestCase):
 
     def test_fail_if_incorrect_format(self):
         allocations = ['incorrect_format']
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             ValueError,
             'Incorrect allocation',
             allocation.parse_allocations, allocations)
         allocations = ['=,']
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             ValueError,
             '2 is required',
             allocation.parse_allocations, allocations)
         allocations = ['abc=155']
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             ValueError,
             'Incorrect allocation',
             allocation.parse_allocations, allocations)
         allocations = ['abc=155,xyz=999']
-        self.assertRaisesRegexp(
+        self.assertRaisesRegex(
             ValueError,
             'parameter is required',
             allocation.parse_allocations, allocations)
