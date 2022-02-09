@@ -15,6 +15,7 @@ import argparse
 from osc_lib.command import command
 from osc_lib import utils
 
+from osc_placement.resources import common
 from osc_placement import version
 
 
@@ -114,7 +115,10 @@ class ListResourceProvider(command.Lister, version.CheckerMixin):
             help='A required trait. May be repeated. Resource providers '
                  'must collectively contain all of the required traits. '
                  'This option requires at least '
-                 '``--os-placement-api-version 1.18``.'
+                 '``--os-placement-api-version 1.18``. '
+                 'Since ``--os-placement-api-version 1.39`` the value of '
+                 'this parameter can be a comma separated list of trait names '
+                 'to express OR relationship between those traits.'
         )
         parser.add_argument(
             '--forbidden',
@@ -175,17 +179,28 @@ class ListResourceProvider(command.Lister, version.CheckerMixin):
         if 'in_tree' in parsed_args and parsed_args.in_tree:
             self.check_version(version.ge('1.14'))
             filters['in_tree'] = parsed_args.in_tree
+
+        # We need to handle required and forbidden together as they all end up
+        # in the same query param on the API.
+        # First just check that the requested feature is aligned with the
+        # request microversion
+        required_traits = []
         if 'required' in parsed_args and parsed_args.required:
             self.check_version(version.ge('1.18'))
-            filters['required'] = ','.join(parsed_args.required)
+            if any(',' in required for required in parsed_args.required):
+                self.check_version(version.ge('1.39'))
+            required_traits = parsed_args.required
+
+        forbidden_traits = []
         if 'forbidden' in parsed_args and parsed_args.forbidden:
             self.check_version(version.ge('1.22'))
-            forbidden_traits = ','.join(
-                ['!' + f for f in parsed_args.forbidden])
-            if 'required' in filters:
-                filters['required'] += ',' + forbidden_traits
-            else:
-                filters['required'] = forbidden_traits
+            forbidden_traits = ['!' + f for f in parsed_args.forbidden]
+
+        # Then collect the required query params containing both required and
+        # forbidden traits
+        filters['required'] = common.get_required_query_param_from_args(
+            required_traits, forbidden_traits)
+
         if 'member_of' in parsed_args and parsed_args.member_of:
             # Fail if --member-of but not high enough microversion.
             self.check_version(version.ge('1.3'))
