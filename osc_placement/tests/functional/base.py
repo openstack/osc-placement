@@ -10,11 +10,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import io
 import logging
 import random
 
 import fixtures
-import six
 
 from openstackclient import shell
 from oslotest import base
@@ -93,8 +93,8 @@ class BaseTestCase(base.BaseTestCase):
 
         # Context manager here instead of setUp because we only want
         # output trapping around the run().
-        self.output = six.StringIO()
-        self.error = six.StringIO()
+        self.output = io.StringIO()
+        self.error = io.StringIO()
         stdout_fix = fixtures.MonkeyPatch('sys.stdout', self.output)
         stderr_fix = fixtures.MonkeyPatch('sys.stderr', self.error)
         with stdout_fix, stderr_fix:

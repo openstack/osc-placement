@@ -16,7 +16,6 @@ import logging
 import keystoneauth1.exceptions.http as ks_exceptions
 import osc_lib.exceptions as exceptions
 import simplejson as json
-import six
 
 from osc_placement import version
 
@@ -42,7 +41,7 @@ def _wrap_http_exceptions():
             msg = detail.split('\n')[-1].strip()
             exc_class = _http_error_to_exc.get(exc.http_status,
                                                exceptions.CommandError)
-            six.raise_from(exc_class(exc.http_status, msg), exc)
+            raise exc_class(exc.http_status, msg) from exc
         else:
             raise
 
