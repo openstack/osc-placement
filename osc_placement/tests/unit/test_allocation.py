@@ -14,7 +14,6 @@ import uuid
 
 from osc_lib import exceptions
 from oslotest import base
-import six
 
 from osc_placement.resources import allocation
 
@@ -51,7 +50,7 @@ class TestAllocation(base.BaseTestCase):
             exceptions.CommandError, allocation.parse_allocations, allocations)
         self.assertEqual(
             'Conflict detected for resource provider %s resource class VCPU' %
-            rp1, six.text_type(ex))
+            rp1, str(ex))
 
     def test_fail_if_incorrect_format(self):
         allocations = ['incorrect_format']

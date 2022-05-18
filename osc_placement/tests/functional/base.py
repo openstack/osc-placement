@@ -159,7 +159,7 @@ class BaseTestCase(base.BaseTestCase):
             self.fail('Command does not fail as required (%s)' % signature)
         except CommandException as e:
             self.assertIn(
-                message, six.text_type(e),
+                message, str(e),
                 'Command "%s" fails with different message' % e.cmd)
 
     def resource_provider_create(self,
@@ -178,7 +178,7 @@ class BaseTestCase(base.BaseTestCase):
                 self.resource_provider_delete(res['uuid'])
             except CommandException as exc:
                 # may have already been deleted by a test case
-                err_message = six.text_type(exc).lower()
+                err_message = str(exc).lower()
                 if 'no resource provider' not in err_message:
                     raise
         self.addCleanup(cleanup)
@@ -255,7 +255,7 @@ class BaseTestCase(base.BaseTestCase):
                 self.openstack('resource provider allocation delete ' + uuid)
             except CommandException as exc:
                 # may have already been deleted by a test case
-                if 'not found' in six.text_type(exc).lower():
+                if 'not found' in str(exc).lower():
                     pass
         self.addCleanup(cleanup, consumer_uuid)
 
@@ -272,7 +272,7 @@ class BaseTestCase(base.BaseTestCase):
         if provider:
             # --provider can be specified multiple times so if we only get
             # a single string value convert to a list.
-            if isinstance(provider, six.string_types):
+            if isinstance(provider, str):
                 provider = [provider]
             cmd += ' ' + ' '.join(
                 '--provider %s' % rp_uuid for rp_uuid in provider)
@@ -286,7 +286,7 @@ class BaseTestCase(base.BaseTestCase):
                 self.openstack('resource provider allocation delete ' + uuid)
             except CommandException as exc:
                 # may have already been deleted by a test case
-                if 'not found' in six.text_type(exc).lower():
+                if 'not found' in str(exc).lower():
                     pass
         self.addCleanup(cleanup, consumer_uuid)
 
@@ -406,7 +406,7 @@ class BaseTestCase(base.BaseTestCase):
                 self.trait_delete(name)
             except CommandException as exc:
                 # may have already been deleted by a test case
-                err_message = six.text_type(exc).lower()
+                err_message = str(exc).lower()
                 if 'http 404' not in err_message:
                     raise
         self.addCleanup(cleanup)

@@ -12,8 +12,6 @@
 
 from unittest import mock
 
-import six
-
 import keystoneauth1.exceptions.http as ks_exceptions
 import osc_lib.exceptions as exceptions
 import oslotest.base as base
@@ -54,7 +52,7 @@ class TestSessionClient(base.BaseTestCase):
         exc = self.assertRaises(exceptions.NotFound, go)
         self.assertEqual(404, exc.http_status)
         self.assertIn('No resource provider with uuid 123 found',
-                      six.text_type(exc))
+                      str(exc))
 
     def test_unexpected_response(self):
         def go():
@@ -63,7 +61,7 @@ class TestSessionClient(base.BaseTestCase):
 
         exc = self.assertRaises(ks_exceptions.InternalServerError, go)
         self.assertEqual(500, exc.http_status)
-        self.assertIn('Internal Server Error (HTTP 500)', six.text_type(exc))
+        self.assertIn('Internal Server Error (HTTP 500)', str(exc))
 
     def test_session_client_version(self):
         session = mock.Mock()
