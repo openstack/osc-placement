@@ -50,6 +50,7 @@ SUPPORTED_MICROVERSIONS = [
     '1.29',
     '1.37',  # unused
     '1.38',  # Added for consumer types (Xena)
+    '1.39',  # Added any-traits support (Yoga)
 ]
 SUPPORTED_VERSIONS = SUPPORTED_MICROVERSIONS + NEGOTIATE_VERSIONS
 # The max microversion lower than which are all supported by this client.

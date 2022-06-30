@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    Both the ``openstack resource provider list`` and
+    ``openstack allocation candidate list`` command now supports
+    ``--os-placement-api-version 1.39`` where the ``--required`` argument now
+    can contain a comma separated list of trait names to express OR
+    relationship. So ``--required T1,T2 --required T3`` means
+    (T1 or T2) and T3.
+

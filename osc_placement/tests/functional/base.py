@@ -444,7 +444,8 @@ class BaseTestCase(base.BaseTestCase):
                                       limit=None):
         cmd = 'allocation candidate list '
         for suffix, req_group in groups.items():
-            cmd += ' --group %s' % suffix
+            if suffix:
+                cmd += ' --group %s' % suffix
             cmd += self._allocation_candidates_option(**req_group)
             if limit is not None:
                 cmd += ' --limit %d' % limit

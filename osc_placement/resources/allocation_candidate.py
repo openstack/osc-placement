@@ -16,6 +16,7 @@ import collections
 from osc_lib.command import command
 from osc_lib import exceptions
 
+from osc_placement.resources import common
 from osc_placement import version
 
 
@@ -102,7 +103,10 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
             help='A required trait. May be repeated. Allocation candidates '
                  'must collectively contain all of the required traits. '
                  'This option requires at least '
-                 '``--os-placement-api-version 1.17``.'
+                 '``--os-placement-api-version 1.17``. '
+                 'Since ``--os-placement-api-version 1.39`` the value of '
+                 'this parameter can be a comma separated list of trait names '
+                 'to express OR relationship between those traits.'
         )
         parser.add_argument(
             '--forbidden',
@@ -204,18 +208,31 @@ class ListAllocationCandidate(command.Lister, version.CheckerMixin):
 
             params[_get_key('resources')] = ','.join(
                 resource.replace('=', ':') for resource in group['resources'])
+
+            # We need to handle required and forbidden together as they all
+            # end up in the same query param on the API.
+            # First just check that the requested feature is aligned with the
+            # request microversion
+            required_traits = []
             if 'required' in group and group['required']:
                 # Fail if --required but not high enough microversion.
                 self.check_version(version.ge('1.17'))
-                params[_get_key('required')] = ','.join(group['required'])
+                if any(',' in required for required in group['required']):
+                    self.check_version(version.ge('1.39'))
+                required_traits = group['required']
+
+            forbidden_traits = []
             if 'forbidden' in group and group['forbidden']:
                 self.check_version(version.ge('1.22'))
-                forbidden_traits = ','.join(
-                    ['!' + f for f in group['forbidden']])
-                if 'required' in params:
-                    params[_get_key('required')] += ',' + forbidden_traits
-                else:
-                    params[_get_key('required')] = forbidden_traits
+                forbidden_traits = ['!' + f for f in group['forbidden']]
+
+            # Then collect the required query params containing both required
+            # and forbidden traits
+            params[_get_key('required')] = (
+                common.get_required_query_param_from_args(
+                    required_traits, forbidden_traits)
+            )
+
             if 'aggregate_uuid' in group and group['aggregate_uuid']:
                 # Fail if --aggregate_uuid but not high enough microversion.
                 self.check_version(version.ge('1.21'))

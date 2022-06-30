@@ -36,3 +36,23 @@ def url_with_filters(url, filters=None):
         url = urlparse.urljoin(url, '?' + urlencoded_filters)
 
     return url
+
+
+def get_required_query_param_from_args(required_traits, forbidden_traits):
+    # Iterate the required params and collect OR groups and simple
+    # AND traits separately. Each OR group needs a separate query param
+    # while the AND traits and forbidden traits can be collated to a single
+    # query param
+    required_query_params = []
+    and_traits = []
+    for required in required_traits:
+        if ',' in required:
+            required_query_params.append('in:' + required)
+        else:
+            and_traits.append(required)
+    # We need an extra required query param for the and_traits and the
+    # forbidden traits
+    and_query = ','.join(and_traits + forbidden_traits)
+    if and_query:
+        required_query_params.append(and_query)
+    return required_query_params

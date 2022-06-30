@@ -356,7 +356,7 @@ class TestResourceProvider122(base.BaseTestCase):
         rps = self.resource_provider_list(
             resources=('MEMORY_MB=1024', 'DISK_GB=80'),
             required=('HW_CPU_X86_VMX',),
-            forbidden=('!STORAGE_DISK_SSD',))
+            forbidden=('STORAGE_DISK_SSD',))
 
         uuids = [rp['uuid'] for rp in rps]
 
@@ -364,3 +364,67 @@ class TestResourceProvider122(base.BaseTestCase):
         self.assertNotIn(rp1['uuid'], uuids)
         self.assertIn(rp2['uuid'], uuids)
         self.assertIn(rp3['uuid'], uuids)
+
+    def test_list_required_trait_any_trait_old_microversion(self):
+        self.assertCommandFailed(
+            'Operation or argument is not supported with version 1.22',
+            self.resource_provider_list,
+            resources=('MEMORY_MB=1024', 'DISK_GB=80'),
+            required=(
+                'STORAGE_DISK_HDD,STORAGE_DISK_SSD',
+                'HW_NIC_SRIOV_MULTIQUEUE'),
+        )
+
+
+class TestResourceProvider139(base.BaseTestCase):
+    VERSION = '1.39'
+
+    def test_list_required_trait_any_trait(self):
+        rp1 = self.resource_provider_create()
+        rp2 = self.resource_provider_create()
+        self.resource_inventory_set(
+            rp1['uuid'], 'MEMORY_MB=8192', 'DISK_GB=512')
+        self.resource_inventory_set(
+            rp2['uuid'], 'MEMORY_MB=8192', 'DISK_GB=512')
+        self.resource_provider_trait_set(
+            rp1['uuid'], 'STORAGE_DISK_SSD', 'HW_NIC_SRIOV_MULTIQUEUE')
+        self.resource_provider_trait_set(
+            rp2['uuid'], 'STORAGE_DISK_HDD', 'HW_NIC_SRIOV_MULTIQUEUE')
+
+        rps = self.resource_provider_list(
+            resources=('MEMORY_MB=1024', 'DISK_GB=80'),
+            required=('HW_NIC_SRIOV_MULTIQUEUE',))
+
+        self.assertEqual(
+            {rp1['uuid'], rp2['uuid']}, {rp['uuid'] for rp in rps})
+
+        # Narrow the results and check multiple args.
+        rps = self.resource_provider_list(
+            resources=('MEMORY_MB=1024', 'DISK_GB=80'),
+            required=('STORAGE_DISK_HDD', 'HW_NIC_SRIOV_MULTIQUEUE',))
+
+        self.assertEqual({rp2['uuid']}, {rp['uuid'] for rp in rps})
+
+        # Query for (HDD or SSD) and MULTIQUEUE and see that both RP returned
+        # again
+        rps = self.resource_provider_list(
+            resources=('MEMORY_MB=1024', 'DISK_GB=80'),
+            required=(
+                'STORAGE_DISK_HDD,STORAGE_DISK_SSD',
+                'HW_NIC_SRIOV_MULTIQUEUE')
+        )
+
+        self.assertEqual(
+            {rp1['uuid'], rp2['uuid']}, {rp['uuid'] for rp in rps})
+
+        # Query for (HDD or SSD) and MULTIQUEUE and !SSD and see that one of
+        # the RPs are filtered
+        rps = self.resource_provider_list(
+            resources=('MEMORY_MB=1024', 'DISK_GB=80'),
+            required=(
+                'STORAGE_DISK_HDD,STORAGE_DISK_SSD',
+                'HW_NIC_SRIOV_MULTIQUEUE'),
+            forbidden=('STORAGE_DISK_SSD',),
+        )
+
+        self.assertEqual({rp2['uuid']}, {rp['uuid'] for rp in rps})
