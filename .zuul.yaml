@@ -16,7 +16,6 @@
         - openstack-tox-functional-py310:
             required-projects:
               - openstack/placement
-            voting: False
     gate:
       jobs:
         - openstack-tox-functional-py38:
@@ -28,5 +27,3 @@
         - openstack-tox-functional-py310:
             required-projects:
               - openstack/placement
-            voting: False
-
