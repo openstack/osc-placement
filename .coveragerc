@@ -1,6 +1,7 @@
 [run]
 branch = True
 source = osc_placement
+omit = osc_placement/tests/*
 
 [report]
 ignore_errors = True
