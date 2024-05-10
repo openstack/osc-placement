@@ -17,7 +17,6 @@
             required-projects:
               - openstack/placement
         - openstack-tox-functional-py312:
-            voting: false
             required-projects:
               - openstack/placement
     gate:
@@ -29,5 +28,8 @@
             required-projects:
               - openstack/placement
         - openstack-tox-functional-py311:
+            required-projects:
+              - openstack/placement
+        - openstack-tox-functional-py312:
             required-projects:
               - openstack/placement
