@@ -11,6 +11,7 @@
 # under the License.
 
 import io
+import json
 import logging
 import random
 
@@ -20,7 +21,6 @@ from openstackclient import shell
 from oslotest import base
 from placement.tests.functional.fixtures import capture
 from placement.tests.functional.fixtures import placement
-import simplejson as json
 
 
 # A list of logger names that will be reset to a log level

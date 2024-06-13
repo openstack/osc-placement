@@ -10,13 +10,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import json
 from unittest import mock
 
 import keystoneauth1.exceptions.http as ks_exceptions
 import osc_lib.exceptions as exceptions
 import oslotest.base as base
 import requests
-import simplejson as json
 
 from osc_placement import http
 from osc_placement import version

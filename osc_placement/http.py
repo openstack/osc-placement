@@ -11,11 +11,11 @@
 # under the License.
 
 import contextlib
+import json
 import logging
 
 import keystoneauth1.exceptions.http as ks_exceptions
 import osc_lib.exceptions as exceptions
-import simplejson as json
 
 from osc_placement import version
 
