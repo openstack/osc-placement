@@ -70,7 +70,7 @@ class TestVersion(base.BaseTestCase):
         self.assertRaisesRegex(
             ValueError,
             'Operation or argument is not supported',
-            version.compare, '3.1.2', version.gt('3.1.3'))
+            version.compare, '3.1', version.gt('3.2'))
 
     def test_check_decorator(self):
         fake_api = mock.Mock()

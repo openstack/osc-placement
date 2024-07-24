@@ -10,8 +10,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from distutils.version import StrictVersion
+import functools
 import operator
+import re
 
 
 NEGOTIATE_VERSIONS = [
@@ -60,8 +61,29 @@ SUPPORTED_VERSIONS = SUPPORTED_MICROVERSIONS + NEGOTIATE_VERSIONS
 MAX_VERSION_NO_GAP = '1.29'
 
 
+@functools.total_ordering
+class _Version:
+    _version_re = re.compile(r'^(\d) \. (\d+)$', re.VERBOSE | re.ASCII)
+
+    def __init__(self, version):
+        match = self._version_re.match(version)
+        if not match:
+            raise ValueError('invalid version number %s' % version)
+        major, minor = match.group(1, 2)
+        self.version = (int(major), int(minor))
+
+    def __str__(self):
+        return '.'.join(str(v) for v in self.version)
+
+    def __eq__(self, other):
+        return self.version == other.version
+
+    def __lt__(self, other):
+        return self.version < other.version
+
+
 def _op(func, b, msg):
-    return lambda a: func(StrictVersion(a), StrictVersion(b)) or msg
+    return lambda a: func(_Version(a), _Version(b)) or msg
 
 
 def lt(b):
