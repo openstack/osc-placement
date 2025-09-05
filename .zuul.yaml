@@ -7,9 +7,6 @@
       - openstackclient-plugin-jobs
     check:
       jobs:
-        - openstack-tox-functional-py39:
-            required-projects:
-              - openstack/placement
         - openstack-tox-functional-py310:
             required-projects:
               - openstack/placement
@@ -21,9 +18,6 @@
               - openstack/placement
     gate:
       jobs:
-        - openstack-tox-functional-py39:
-            required-projects:
-              - openstack/placement
         - openstack-tox-functional-py310:
             required-projects:
               - openstack/placement
