@@ -31,12 +31,14 @@ from placement.tests.functional.fixtures import placement
 # packages chosen here are ones that do not provide useful information.
 RESET_LOGGING = [
     'keystoneauth.session',
-    'oslo_policy.policy',
-    'placement.objects.trait',
-    'placement.objects.resource_class',
-    'placement.objects.resource_provider',
-    'oslo_concurrency.lockutils',
     'osc_lib.shell',
+]
+# A list of logger names that will be reset to a log level of CRITICAL. These
+# are loaded by placement-api which is loaded via Fixture.
+RESET_LOGGING_SERVER = [
+    'oslo_policy.policy',
+    'placement',
+    'oslo_concurrency.lockutils',
 ]
 
 RP_PREFIX = 'osc-placement-functional-tests-'
@@ -75,6 +77,8 @@ class BaseTestCase(base.BaseTestCase):
         # assigment, above.
         for name in RESET_LOGGING:
             logging.getLogger(name).setLevel(logging.WARNING)
+        for name in RESET_LOGGING_SERVER:
+            logging.getLogger(name).setLevel(logging.CRITICAL)
 
     def openstack(self, cmd, may_fail=False, use_json=False,
                   may_print_to_stderr=False):
