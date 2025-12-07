@@ -16,6 +16,9 @@
         - openstack-tox-functional-py312:
             required-projects:
               - openstack/placement
+        - openstack-tox-functional-py313:
+            required-projects:
+              - openstack/placement
     gate:
       jobs:
         - openstack-tox-functional-py310:
@@ -25,5 +28,8 @@
             required-projects:
               - openstack/placement
         - openstack-tox-functional-py312:
+            required-projects:
+              - openstack/placement
+        - openstack-tox-functional-py313:
             required-projects:
               - openstack/placement
